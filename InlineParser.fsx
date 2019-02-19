@@ -15,7 +15,7 @@ type InlineElement =
     | Link  of LinkInfo
     | Plain of Token list
 
-and LinkInfo = {linkText:InlineElement list;linkDest: Token list}
+and LinkInfo = {linkText:InlineElement list;linkDest: InlineElement}
        
 let (|RegexPrefix|_|) pat txt =
     // Match from start, ignore whitespace
@@ -24,13 +24,10 @@ let (|RegexPrefix|_|) pat txt =
     | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
     | false -> None
     
-let matchRegex = (|RegexPrefix|_|)
-
 let (|Inner|_|) txt = 
     match txt with 
     | ""   -> None
     | text -> Some text.[1..text.Length-2]
-
 
 let (|Or|_|) ap1 ap2 =
     let innerFn txt =
@@ -53,7 +50,7 @@ let (|Chain|_|) listOfAP tokenList=
             | Some (v,r) -> Some (v::result,r)
             | None -> None
 
-    (Some ([],tokenList),listOfAP) ||> List.fold folder
+    (Some ([],tokenList),listOfAP) ||> List.fold folder |> Option.bind(fun (v,r)-> Some (List.rev v,r))
     
 let (|InnerTokensSB|_|) tokenList =
     let folder state token =
@@ -99,10 +96,7 @@ let rec noLeadingWhitespace tokenList =
     | Whitespace::rlst ->  noLeadingWhitespace rlst
     | _ -> tokenList
 
-
 let rec (|InlineParser|_|) tokenList = 
-
-    let inlineParser = (|InlineParser|_|) 
 
     let (|LinkDest|_|) tokenList = 
         let linkDest = tokenList 
@@ -112,59 +106,58 @@ let rec (|InlineParser|_|) tokenList =
                        |> List.rev
         let hasWhitespace = linkDest |> List.exists (fun t->t=Whitespace)
         match hasWhitespace with
-        | false -> Some linkDest
-        | true  -> None //need to check for " " 
-        //strip leading and training whitespace and check no whitespace remaining -> link only or maybe with title
+        | false -> Some (Plain linkDest)
+        | true  -> None //need to check for " " optional title
 
     // [...](..)
     let (|ParseLink|_|) tokenList = 
         let toMatch = [(|InnerTokensSB|_|);(|InnerTokensRB|_|)]
         match tokenList with
         | Chain toMatch (result,remain) ->
-            let textToks = result.[0] // Pasre into inlineElements
-            let destToks = result.[1] // Need to verify format
-            
-
-        | _ -> None
-         
-       (* match innerTokensSB tokenList with
-        | Some (linkText,remain) -> 
-            match innerTokensRB remain with
-            | Some (linkDest,remain) ->
-                let linkTextEl = 
-                    match linkText with 
-                    | InlineParser (v,r) -> Some v 
-                    | _ -> None //?
-                match linkDest with //ensure if goodl linkdest
-                | LinkDest value -> 
-                    (Link {linkText=linkTextEl;linkDest=value},remain)
-                    |> Some   
+            let linkText =
+                match result.[0] with
+                | InlineParser v -> v
+                | _ -> [Plain [Text ""]]
+            let linkDest = 
+                match result.[1] with
+                | LinkDest v -> Some v
                 | _ -> None
-            | None -> None
-        | None -> None*)
+            printfn "lT %A lD %A" result.[0] result.[1]
+            printfn "lT %A lD %A" linkText linkDest
+            match linkText,linkDest with
+            | linkText, Some linkDest -> (Link {linkText=linkText;linkDest=linkDest},remain) |> Some
+            | _,None ->  None
+        | _ -> None
 
-    let (|ParseText|_|) tokenList = 
+    let (|ParseText|_|) tokenList =
         let predicate tok = 
             match tok with
-            | Text a  -> false
+            | Text a    -> false
             | Whitespace -> false
             | Escaped  a -> false
             | _ -> true
         match tokenList with
         | [] -> None
         | _  ->
-            let endIdx = tokenList |> List.tryFindIndex predicate
-            //printfn "%A" endIdx
+            let endIdx = List.tryFindIndex predicate tokenList 
             match endIdx with 
             | Some idx -> Some (Plain tokenList.[0..idx],tokenList.[idx+1..])
-            | None     -> Some (Plain tokenList,[]) //consume everything?
+            | None     -> Some (Plain tokenList,[]) 
             
+    let parseStep = 
+        match tokenList with
+        | ParseLink (value,remain) -> Some (value,remain)
+        | ParseText (value,remain) -> Some (value,remain)
+        | _ -> None
 
-    match tokenList with
-    | ParseLink (value,remain) -> Some (value,remain)
-    //| ParseText (value,remain) -> Some (value,remain)
-    | _ -> None
-    
+    match parseStep with
+    | Some (value,remain) ->
+        match remain with
+        | InlineParser v2 -> List.concat [[value];v2] |> Some
+        | _ -> Some [value]
+    | None -> None
+
+
 let rec inlineTokeniser txt = 
     match txt with
     | "" -> []
@@ -178,39 +171,18 @@ let rec inlineTokeniser txt =
             | RegexPrefix "[\s]+" (_,remain)         -> (Whitespace,remain)
             | RegexPrefix "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]" (str,remain) -> ((Escaped str),remain)
             | RegexPrefix "[^\s\[\]\(\)\\\]*" (str,remain) -> ((Text str),remain)
-
         match (inlineTokeniser remain) with
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
 
-let tokenList = inlineTokeniser "[hello world](w\?ww.google.com)[hello world](www.goxogle.xxom)"
+let tokenList = inlineTokeniser "[ab](a)[a[]b](a)"//"[hello world](w\?ww.google.com)[hello world](www.goxogle.xxom)"
 match tokenList  with 
 | InlineParser result -> Some result
 | _ -> None
 
 
 
-
 (*
-let (|BackslashEscape|_|) txt =
-    let escapePattern = "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]"
-    matchRegex escapePattern txt
-
-// To Add : leading and trailing spaces and line endings removed,
-//           and whitespace collapsed to single spaces.
-let (|CodeSpan|_|) txt =
-    let openingBackTickPattern = "[`]+" 
-    match txt with
-    | RegexPrefix openingBackTickPattern (value,remain) ->
-        match remain.IndexOf(value) with
-        | -1  -> None
-        | idx -> 
-            let subsValue  = remain.Remove(idx)
-            let subsRemain = remain.[idx+value.Length..]
-            Some (subsValue,subsRemain)    
-    | _ -> None
-    
-
 // Auto Link :  "< Absolute URI >"
 // Absolute URI : "Scheme : ASCII (Exlcuding Ws < >)"   
 let (|AutoLink|_|) txt = 
@@ -218,28 +190,6 @@ let (|AutoLink|_|) txt =
     let uri    = "[^<>\\s]*"
     let absoluteUri = scheme + ":" + uri
     let uriPattern    = "<" + absoluteUri + ">"
-    matchRegex uriPattern txt    *)
-
-(*
-//Chaining Active Patterns
-let (|Chain|_|) ap1 ap2 =
-    let innerFn txt =
-        ap1 txt 
-        |> Option.bind(
-            fun ((value:string),(remain:string))->
-                ap2 remain 
-                |> Option.bind (
-                    fun (subsValue,subsRemain) ->
-                        Some (value+subsValue,subsRemain)
-                   )
-            )
-    innerFn
-    
-let (.>>.) = (|Chain|_|)
-
-let (|A|_|) txt =
-    let (|Ap|_|) = (|Scheme|_|) .>>. (|Colon|_|) .>>. (|BackslashEscape|_|)
-    match txt with
-    | Ap (value,remain) -> (value,remain) |> Some
-    | _ -> None
+    matchRegex uriPattern txt 
 *)
+
