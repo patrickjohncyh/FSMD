@@ -7,19 +7,20 @@ type Token =
     | RBracketC
     | QuoteMark
     | Whitespace
+    | SQuoted of string
+    | DQuoted of string
     | Escaped of string
-    | Text of string
+    | Text    of string
 
    
 type InlineElement = 
     | Link  of LinkInfo
     | Plain of Token list
 
-and LinkInfo = {linkText:InlineElement list;linkDest: InlineElement}
-       
+and LinkInfo = {linkText:InlineElement list;linkDest: InlineElement; linkTitle : InlineElement option }
+
 let (|RegexPrefix|_|) pat txt =
-    // Match from start, ignore whitespace
-    let m = Regex.Match(txt, "^" + pat) //"^[\\s]*" + pat + "[\\s]*")    
+    let m = Regex.Match(txt,"^"+ pat)
     match m.Success with
     | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
     | false -> None
@@ -98,16 +99,28 @@ let rec noLeadingWhitespace tokenList =
 
 let rec (|InlineParser|_|) tokenList = 
 
-    let (|LinkDest|_|) tokenList = 
-        let linkDest = tokenList 
-                       |> noLeadingWhitespace 
-                       |> List.rev 
-                       |> noLeadingWhitespace 
-                       |> List.rev
-        let hasWhitespace = linkDest |> List.exists (fun t->t=Whitespace)
-        match hasWhitespace with
-        | false -> Some (Plain linkDest)
-        | true  -> None //need to check for " " optional title
+    let (|LinkDestTitle|_|) tokenList = 
+        let strpList = tokenList|> List.rev |> noLeadingWhitespace |> List.rev
+
+        let splitIdx = strpList |> List.tryFindIndex (function | DQuoted x -> true 
+                                                               | SQuoted x -> true 
+                                                               | _ -> false)
+        let destTitle =
+            match splitIdx with
+            | Some idx when idx=strpList.Length-1 ->
+                List.splitAt idx strpList |> (fun (a,b) -> (a,Some (Plain b))) |> Some
+            | None -> (strpList,None) |> Some
+            | _    -> None
+
+        match destTitle with
+        | None -> None
+        | Some (dest,linkTitle) ->
+            let linkDest = dest |> noLeadingWhitespace |> List.rev 
+                                |> noLeadingWhitespace |> List.rev
+            let hasWhitespace = linkDest |> List.tryFind (fun t->t=Whitespace)
+            match hasWhitespace with
+            | None   -> Some (Plain linkDest,linkTitle)
+            | _      -> None
 
     // [...](..)
     let (|ParseLink|_|) tokenList = 
@@ -118,28 +131,27 @@ let rec (|InlineParser|_|) tokenList =
                 match result.[0] with
                 | InlineParser v -> v
                 | _ -> [Plain [Text ""]]
-            let linkDest = 
-                match result.[1] with
-                | LinkDest v -> Some v
+            printfn"%A" result.[1]
+            match result.[1] with
+                | LinkDestTitle (linkDest,linkTitle) -> 
+                    (Link {linkText=linkText;
+                           linkDest=linkDest;
+                           linkTitle=linkTitle },remain) |> Some
                 | _ -> None
-            printfn "lT %A lD %A" result.[0] result.[1]
-            printfn "lT %A lD %A" linkText linkDest
-            match linkText,linkDest with
-            | linkText, Some linkDest -> (Link {linkText=linkText;linkDest=linkDest},remain) |> Some
-            | _,None ->  None
         | _ -> None
 
     let (|ParseText|_|) tokenList =
         let predicate tok = 
             match tok with
-            | Text a    -> false
+            | Text a     -> false
             | Whitespace -> false
-            | Escaped  a -> false
+            | Escaped  a -> false 
             | _ -> true
         match tokenList with
         | [] -> None
         | _  ->
-            let endIdx = List.tryFindIndex predicate tokenList 
+            let endIdx = List.tryFindIndex predicate tokenList.[1..]
+            printfn "%A" endIdx
             match endIdx with 
             | Some idx -> Some (Plain tokenList.[0..idx],tokenList.[idx+1..])
             | None     -> Some (Plain tokenList,[]) 
@@ -170,15 +182,20 @@ let rec inlineTokeniser txt =
             | RegexPrefix "\)" (_,remain)            -> (RBracketC,remain)
             | RegexPrefix "[\s]+" (_,remain)         -> (Whitespace,remain)
             | RegexPrefix "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]" (str,remain) -> ((Escaped str),remain)
+            | RegexPrefix "\"[^\"]*\"" (str,remain) -> ((DQuoted str),remain)
+            | RegexPrefix "\'[^\']*\'" (str,remain) -> ((SQuoted str),remain)
             | RegexPrefix "[^\s\[\]\(\)\\\]*" (str,remain) -> ((Text str),remain)
         match (inlineTokeniser remain) with
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
 
-let tokenList = inlineTokeniser "[ab](a)[a[]b](a)"//"[hello world](w\?ww.google.com)[hello world](www.goxogle.xxom)"
+let tokenList = inlineTokeniser "[normal](link_please   'lol'   )"//"[hello world](w\?ww.google.com) Some plain text [hello wor[ld[]](www.goxogle.xxom  )"
 match tokenList  with 
 | InlineParser result -> Some result
 | _ -> None
+
+
+
 
 
 
