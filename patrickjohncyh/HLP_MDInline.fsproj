@@ -8,5 +8,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
     <None Include="InlineParser.fsx" />
+    <None Include="InlineParser2.fsx" />
+    <None Include="InlineParser3.fsx" />
   </ItemGroup>
 </Project>

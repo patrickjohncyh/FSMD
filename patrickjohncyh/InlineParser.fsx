@@ -180,25 +180,7 @@ let rec (|InlineParser|_|) tokenList =
         | [token]                    -> (len,inner,tokenList )
         | token::remain              -> getNextClosing (remain,(token::inner),len)
         | []                         -> (len,inner,tokenList )
-
-   (*let rec (|CloseEmphasis|_|) openEmph tokenList =
-        let (closeLen,inner,remain) = getNextClosing (tokenList,[],0)
-        match closeLen with
-        | 0 -> None
-        | _ ->
-            let validLen  = min closeLen (List.length openEmph)
-            let excess    = List.splitAt (closeLen-validLen) openEmph |> fst
-            let strong    = [1..validLen/2]
-            let em        = [1..validLen%2]
-            match excess with
-            | [] -> //do nothing
-            | _  -> //try to match with reamining
-                match remain with 
-                | CloseEmphasis excess -> //expect inlineElement list * remain
-                | _ ->  //matched with nothing, excess jsut plain, remain remians *)
-
-
-
+        
     // Need to find the furtherst ?
     let (|ParseEmphasis|_|) tokenList =
         match tokenList with 
@@ -308,7 +290,7 @@ let rec inlineTokeniser txt =
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
 
-let tokenList = inlineTokeniser "*lol `rekt lol*` lol"
+let tokenList = inlineTokeniser ""
 
 match tokenList  with 
 | InlineParser result -> Some result
