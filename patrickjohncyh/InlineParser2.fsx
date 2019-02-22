@@ -7,12 +7,15 @@ type Token =
     | RBracketC
     | QuoteMark
     | Whitespace
+    | Exclamation
     | Asterisk
     | EmpOpen
     | EmpClose
     | StrongOpen
     | StrongClose
     | Underscore
+    | LessThan
+    | GreaterThan
     | Escaped of string
     | Text    of string
     | BacktickStr of int
@@ -20,6 +23,7 @@ type Token =
 
 and InlineElement = 
     | Link  of LinkInfo
+    | Image of LinkInfo
     | Plain of Token list
     | CodeSpan  of Token list
     | Strong of Token list
@@ -53,6 +57,7 @@ let rec inlineTokeniser txt =
             | RegexPrefix "\)"          (_,remain)    -> (RBracketC,remain)
             | RegexPrefix "_"           (_,remain)    -> (Underscore,remain)
             | RegexPrefix "\*"         (_,remain)   ->  (Asterisk,remain)
+            | RegexPrefix "\!"         (_,remain)   ->  (Exclamation,remain)
             | RegexPrefix "[\"]"         (_,remain)   ->  (QuoteMark,remain)
             | RegexPrefix "[`]+"        (str,remain)  -> (BacktickStr str.Length,remain)
             | RegexPrefix "[\s]"       (_,remain)    -> (Whitespace,remain)
@@ -119,48 +124,56 @@ let rec parser tokens =
                            before @ (parseCodeSpans after)
         | _ -> tokens
 
-    let rec parseLinks tokens = 
-        let parseText tokens = 
-            let sIdx   = findTokenIdx SBracketO tokens
-            let eIdx i = balancedCloseIdx SBracketO SBracketC tokens i
-            match (sIdx,Option.bind (eIdx) sIdx)  with
-            | Some s,Some e -> let (before,inner,after) = splitTokens tokens s e
-                               Some (before,parser inner,after)
-            | _ -> None
+    let rec parseLinksOrImg pType tokens =
+        let (|ParseText|_|) flag tokens = 
+            match flag,findTokenIdx Exclamation tokens with
+            | true, None -> None
+            | _,_ ->
+                let sIdx   = findTokenIdx SBracketO tokens
+                let eIdx i = balancedCloseIdx SBracketO SBracketC tokens i
+                match (sIdx,Option.bind (eIdx) sIdx)  with
+                | Some s,Some e -> let (before,inner,after) = splitTokens tokens s e
+                                   Some (before,parser inner,after)
+                | _ -> None
 
-        let rec parseLink tokens = 
+        let rec (|ParseLink|_|) tokens = 
             let sIdx   = findTokenIdx RBracketO tokens
             let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
             match (sIdx,Option.bind (eIdx) sIdx)  with
             | Some s,Some e when s=0 ->  let (before,inner,after) = splitTokens tokens s e
-                                         if (before.Length < 2) then Some (before,inner,after) else None //1 or less items
+                                         if (before.Length < 2) then Some (inner,after) else None //1 or less items
             | _ -> None
 
-        let parseTitle tokens = 
+        let (|ParseTitle|_|) tokens = 
             let sIdx   = findTokenIdx RBracketO tokens
             let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
             match (sIdx,Option.bind (eIdx) sIdx)  with
             | Some s,Some e when s=0-> let (before,inner,after) = splitTokens tokens s e
-                                       Some (before,inner,after)
+                                       Some (inner,after)
             | _ -> None
-        let linkDetails = match parseText tokens with
-                          | None -> None
-                          | Some (before,text,after) ->
-                                match parseLink after  with
-                                | None -> None
-                                | Some (_,link,after2) -> Some (before,text,link,after2)
-        match linkDetails with 
-        | Some (before,text,link,after) ->
-            let (title,remain) = match parseTitle after with
-                                 | Some (_,title,remain) ->  (Some title,remain) //has title
-                                 | None                  ->  (None,after)        //no title
-            before @ [{linkText=text;linkDest=link;linkTitle=title}|>Link|> Styled] @ (parseLinks remain)
-        | None -> 
-            let sIdx = findTokenIdx SBracketO tokens
-            match sIdx with
-            | Some s -> let (before,after1) = tokens |> List.splitAt (s+1)
-                        before @ (parseLinks after1)
-            | None -> tokens
+
+        let (initToken,typeConst,flag) =   
+            match pType with
+            | Image _ -> Exclamation,Image,true
+            | Link  _ -> SBracketO,Link,false
+            | _       -> failwithf "What? parseLinkOrImg should only take Image or Link as parse type" 
+
+
+        match tokens with
+        | ParseText flag (before,text,ParseLink (link,after))
+            -> match after with
+               | ParseTitle (title,after2)  // Has title
+                    -> before @ [{linkText=text;linkDest=link;linkTitle=Some title}|>typeConst|>Styled] @ (parseLinksOrImg pType after2)
+               | _                          // No title
+                    -> before @ [{linkText=text;linkDest=link;linkTitle=None}|>typeConst|>Styled] @ (parseLinksOrImg pType after)
+        | _ 
+            ->  let sIdx = findTokenIdx initToken tokens
+                match sIdx with
+                | Some s -> 
+                    let (before,after1) = tokens |> List.splitAt (s+1)
+                    before @ (parseLinksOrImg pType after1)
+                | None -> tokens
+                
 
 
     let rec parseEmphasis tokens = 
@@ -184,12 +197,16 @@ let rec parser tokens =
                           before @ (parseCodeSpans after1)
        | _ -> tokens
 
+    let o = {linkDest=[];linkText=[];linkTitle=None}    //some generic LinkInfo
+    tokens 
+    |> parseCodeSpans 
+    |> parseLinksOrImg (Image o)
+    |> parseLinksOrImg (Link  o) 
+    |> parseStrong 
+    |> parseEmphasis
 
-       
-    tokens |> parseCodeSpans |> parseLinks |> parseStrong |> parseEmphasis
 
-
-let tokenList = inlineTokeniser "[*(emphasis)* within a link](www.google.com)"//"[hope this works](lol)"
+let tokenList = inlineTokeniser "![*[(emphasis)* within a link](www.google.com)"//"[hope this works](lol)"
 
 parser tokenList 
 
