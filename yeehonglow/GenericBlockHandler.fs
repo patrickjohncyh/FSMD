@@ -1,4 +1,9 @@
-﻿open System.Text.RegularExpressions
+﻿// Good high level organisation
+// Okay function names
+// Not using Option Type and DU
+//Not using comments
+
+open System.Text.RegularExpressions
 let countMatches wordToMatch (input : string) =
     Regex.Matches(input, Regex.Escape wordToMatch).Count
 
@@ -46,34 +51,32 @@ let h6BlockHandle (inputString:string) =
 let paragraphBlockHandler inputString =
     Paragraph(inLineParser inputString)
 
-let listBlockHandler (inputString:string) =
+let listBlockHandler (inputString:string) =                             //listBlockHandler needs to sync with initial parser
     let splitDot (aList: string) = aList.Split ' '
 
-    let stickyIndent inputString =        //rewrite
+    let stickyIndent inputString =                                      //can be rewritten more easily with Ragex
         let indentNum = countMatches "/indent" inputString
         let intList = [1..indentNum]
         let indentList = List.map (fun _ -> "/indent") intList
         List.append indentList [inputString.[(indentNum*7)..(inputString.Length - 1)]]
 
-    let rec handleIndent (stringList: string list) =
-        match stringList with
-        |"/indent"::t -> List.append ["/indent"] (handleIndent t)
-        |lst -> [lst.[0]; String.concat " " lst.[1..]]
-
-    let rec handleIndent (stringList: string list) =
+    let rec handleIndent (stringList: string list):string list =        //check if this works
         let tempList = []
         let indentNum = countMatches "/indent" stringList.[0]
-        if indentNum = 0 then List.append tempList (stringList)
-        else 
+        let indentList = List.map (fun _ -> "/indent") [1..indentNum]
+        let lastString = stringList.[0].[(indentNum*7)..(inputString.Length - 1)]
+        if indentNum = 0 then List.append tempList stringList
+        else if lastString = "" then List.append indentList (handleIndent stringList.[1..stringList.Length])
+            else List.append indentList (List.append [lastString] (handleIndent stringList.[1..stringList.Length]))
 
-    let merge3More (stringList:string List) =  //fix this, take care of /indent/indent4.
+    let merge3More (stringList:string List) =                           //fix this, take care of non spaced /indent ie /indent/indent
         let stringLen = stringList.Length
         if stringLen > 2 then
             if stringList.[0] = "/indent" then handleIndent stringList
             else [stringList.[0]; String.concat " " stringList.[1..]]
         else stringList
 
-    let removeSpace input =
+    let removeSpace input =                                             
         let rec removeFrontSpace (inputString:string) =
             match inputString.[0] with
             |' ' -> removeFrontSpace inputString.[1..]
@@ -102,7 +105,7 @@ let listBlockHandler (inputString:string) =
 
 let a = listBlockHandler "1./n /indent 2. item two /n /indent /indent - sublist sublist"
 
-
+//references
 type Name1 = 
     |Abc of int
 
