@@ -7,6 +7,8 @@ type Token =
     | RBracketC
     | QuoteMark
     | Whitespace
+    | Asterisk
+    | Underscore
     | SQuoted of string
     | DQuoted of string
     | Escaped of string
@@ -18,6 +20,7 @@ type InlineElement =
     | Link  of LinkInfo
     | Plain of Token list
     | CodeSpan  of Token list
+    | Strong
 
 and LinkInfo = {linkText:InlineElement list;linkDest: InlineElement; linkTitle : InlineElement option }
 
@@ -137,7 +140,6 @@ let rec (|InlineParser|_|) tokenList =
                 match result.[0] with
                 | InlineParser v -> v
                 | _ -> [Plain [Text ""]]
-            printfn"%A" result.[1]
             match result.[1] with
                 | LinkDestTitle (linkDest,linkTitle) -> 
                     (Link {linkText=linkText;
@@ -161,6 +163,92 @@ let rec (|InlineParser|_|) tokenList =
                     (CodeSpan a,remain) |> Some)
         | _ -> None
 
+//##########################  Emphasis  ##########################
+    let rec (|OpenEmphasis|_|) tokenList = 
+        match tokenList with
+        | Asterisk::remain->
+            match remain with
+            | OpenEmphasis (v,r) -> (Asterisk::v,r) |> Some
+            | _ -> None   
+        | Whitespace::_-> None
+        | _ -> ([],tokenList) |> Some
+
+    let rec getNextClosing (tokenList,inner,len) =
+        match tokenList with
+        | Asterisk::Asterisk::remain -> getNextClosing (remain,inner,len+2)
+        | Asterisk::remain           -> (len+1,List.rev inner,remain)
+        | [token]                    -> (len,inner,tokenList )
+        | token::remain              -> getNextClosing (remain,(token::inner),len)
+        | []                         -> (len,inner,tokenList )
+
+   (*let rec (|CloseEmphasis|_|) openEmph tokenList =
+        let (closeLen,inner,remain) = getNextClosing (tokenList,[],0)
+        match closeLen with
+        | 0 -> None
+        | _ ->
+            let validLen  = min closeLen (List.length openEmph)
+            let excess    = List.splitAt (closeLen-validLen) openEmph |> fst
+            let strong    = [1..validLen/2]
+            let em        = [1..validLen%2]
+            match excess with
+            | [] -> //do nothing
+            | _  -> //try to match with reamining
+                match remain with 
+                | CloseEmphasis excess -> //expect inlineElement list * remain
+                | _ ->  //matched with nothing, excess jsut plain, remain remians *)
+
+
+
+    // Need to find the furtherst ?
+    let (|ParseEmphasis|_|) tokenList =
+        match tokenList with 
+        | OpenEmphasis (emph,remain) ->
+            let maskFolder state token = 
+                let (inflag,prevToken,mask) = state
+                let newFlag=  match (prevToken,token) with
+                              | Asterisk,Asterisk     -> inflag
+                              | Whitespace,Asterisk   -> false
+                              | _,Asterisk            -> true
+                              | _,_                   -> false
+                let newMask = if newFlag then Asterisk::mask else Whitespace::mask
+                (newFlag,token,newMask)
+
+            let mask = ((false,Asterisk,[]),remain) ||> List.fold maskFolder 
+                                                    |> (fun (a,b,c) -> c) 
+                                                    |> List.rev
+            let folder state _ =
+                printfn "%A" state 
+                let (n,acc,remain,mask) = state
+                let nextAst  = mask    |> List.tryFindIndex (fun a -> a=Asterisk)  
+                let isDouble = nextAst 
+                               |> Option.bind (fun idx -> List.tryItem (idx+1) remain) 
+                               |> Option.bind (fun item-> if item=Asterisk then Some item else None )
+                let size,idx =  match n,nextAst,isDouble with 
+                                | 0,_,_                -> 0,0
+                                | 1,Some idx,_         -> 1,idx
+                                | n,Some idx,Some _    -> 2,idx
+                                | n,Some idx,_         -> 1,idx
+                                | _,None,_             -> 0,0
+                match size with 
+                | 0 -> (n,acc,remain,mask)
+                | size ->        
+                    let newAcc,newRemain = List.splitAt idx remain |> fun(a,b)-> (size,a),b.[size..] 
+                    let newMask       = List.splitAt idx mask   |> snd |> fun b -> b.[size..]
+                    (n-size,newAcc::acc,newRemain,newMask)
+            let splits,remain = ((emph.Length,[],remain,mask),emph) 
+                                ||> List.fold folder 
+                                 |> fun(a,b,c,d) -> (List.rev b,c)
+
+           (_,splits) ||> List.fold (fun (state,tokList) ->
+                                        let   )
+
+            (splits,remain) |> Some
+        | _ -> None
+
+
+    
+
+
 //##########################   Plain   ##########################
     let (|ParsePlain|_|) tokenList =
         let predicate tok = 
@@ -171,20 +259,17 @@ let rec (|InlineParser|_|) tokenList =
             | _ -> true
         match tokenList with
         | [] -> None
-        | _  ->
-            let endIdx = List.tryFindIndex predicate tokenList.[1..]
-            printfn "%A" endIdx
-            match endIdx with 
-            | Some idx -> Some (Plain tokenList.[0..idx],tokenList.[idx+1..])
-            | None     -> Some (Plain tokenList,[]) 
+        | next::remain -> (Plain [next], remain) |> Some
+ 
 
 //########################## Execution ##########################            
     let parseStep = 
         match tokenList with
         | [] -> None
-        | ParseLink  (value,remain) -> Some (value,remain)
+        | ParseLink     (value,remain) -> Some (value,remain)
         | ParseCodeSpan (value,remain) -> Some (value,remain)
-        | ParsePlain (value,remain) -> Some (value,remain)
+        //| ParseEmphasis (value,remain) -> Some (value,remain)
+        | ParsePlain    (value,remain) -> Some (value,remain)
         | _ -> None
 
     match parseStep with
@@ -197,6 +282,8 @@ let rec (|InlineParser|_|) tokenList =
 
 
 
+
+
 //########################## Tokenizer ##########################   
 let rec inlineTokeniser txt = 
     match txt with
@@ -205,25 +292,27 @@ let rec inlineTokeniser txt =
         let (newToken,remain) = 
             match txt with
             | RegexPrefix "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]" (str,remain) -> ((Escaped str),remain)
-            | RegexPrefix "\[" (_,remain)            -> (SBracketO,remain)
-            | RegexPrefix "\]" (_,remain)            -> (SBracketC,remain)
-            | RegexPrefix "\(" (_,remain)            -> (RBracketO,remain)
-            | RegexPrefix "\)" (_,remain)            -> (RBracketC,remain)
-            | RegexPrefix "[\s]+" (_,remain)         -> (Whitespace,remain)
-            | RegexPrefix "[`]+" (str,remain)        -> (BacktickStr str.Length,remain)
-            | RegexPrefix "\"[^\"]*\"" (str,remain) -> ((DQuoted str),remain)
-            | RegexPrefix "\'[^\']*\'" (str,remain) -> ((SQuoted str),remain)
-            | RegexPrefix "[^`\s\[\]\(\)\\\]*" (str,remain) -> ((Text str),remain)
-
+            | RegexPrefix "\["          (_,remain)    -> (SBracketO,remain)
+            | RegexPrefix "\]"          (_,remain)    -> (SBracketC,remain)
+            | RegexPrefix "\("          (_,remain)    -> (RBracketO,remain)
+            | RegexPrefix "\)"          (_,remain)    -> (RBracketC,remain)
+            | RegexPrefix "_"           (_,remain)    -> (Underscore,remain)
+            | RegexPrefix "[*]"         (_,remain)   ->  (Asterisk,remain)
+            | RegexPrefix "[`]+"        (str,remain)  -> (BacktickStr str.Length,remain)
+            | RegexPrefix "\"[^\"]*\""  (str,remain)  -> ((DQuoted str),remain)
+            | RegexPrefix "\'[^\']*\'"  (str,remain)  -> ((SQuoted str),remain)
+            | RegexPrefix "[\s]"       (_,remain)    -> (Whitespace,remain)
+            | RegexPrefix "[A-Za-z0-9\.]*" (str,remain) -> ((Text str),remain)
+         //   | RegexPrefix "[^`*\s\[\]\(\)\\\]*" (str,remain) -> ((Text str),remain)
         match (inlineTokeniser remain) with
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
 
-let tokenList = inlineTokeniser " `` `` "//"[normal](link_please   'lol'   ) hello wrold"//"[hello world](w\?ww.google.com) Some plain text [hello wor[ld[]](www.goxogle.xxom  )"
+let tokenList = inlineTokeniser "*lol `rekt lol*` lol"
+
 match tokenList  with 
 | InlineParser result -> Some result
 | _ -> None
-
 
 
 
@@ -238,5 +327,8 @@ let (|AutoLink|_|) txt =
     matchRegex uriPattern txt 
 *)
 
+
+
+(|ParseEmphasis|_|) tokenList
 
 
