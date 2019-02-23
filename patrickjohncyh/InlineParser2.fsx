@@ -234,12 +234,14 @@ let rec parser tokens =
                     -> tokens 
                        |> List.splitAt (n+1)
                        |> snd
-                       |> fun after -> List.rev before @ [Hardbreak|>Styled] @ (parseHardBreak after)   
+                       |> fun after -> (before |> stripWSHead |>List.rev)  
+                                        @ [Hardbreak|>Styled]
+                                        @ (after |> stripWSHead |> parseHardBreak)  
                | Newline::Backslash::before
-                    -> tokens 
+                    -> tokens
                        |> List.splitAt (n+1)
                        |> snd
-                       |> fun after -> List.rev before @ [Hardbreak|>Styled] @ (parseHardBreak after)   
+                       |> fun after -> List.rev before @ [Hardbreak|>Styled] @ (after |> stripWSHead |> parseHardBreak)   
                | _  -> tokens 
                        |> List.splitAt (n+1)
                        |> fun (before,after) ->  before @ (parseHardBreak after)
@@ -254,7 +256,7 @@ let rec parser tokens =
     |> parseEmphasis
     |> parseHardBreak
 
-let tokenList = inlineTokeniser "lol  \nlol" //![[*(emphasis)* within a link](www.google.com)"//"[hope this works](lol)"
+let tokenList = inlineTokeniser "lol  \n  lol" //![[*(emphasis)* within a link](www.google.com)"//"[hope this works](lol)"
 
 parser tokenList 
 
