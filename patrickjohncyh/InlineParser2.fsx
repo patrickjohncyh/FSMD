@@ -107,11 +107,11 @@ let splitTokens tokens s e =
     let after3 = after2 |> (function | t::rlst -> rlst |[]->[])
     (before,inner2,after3)
 
-
 let rec parser tokens = 
+    let rec parseCodeSpans tokens =
+        let sIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
 
-    let rec parseCodeSpans tokens = 
-        let sIdx = tokens   |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
+        // Find matching BacktickStr
         let eIdx i = tokens 
                      |> List.splitAt (i+1)
                      |> snd
@@ -125,8 +125,13 @@ let rec parser tokens =
                before @ (parseCodeSpans after)
         | _ -> tokens
 
+
+
+
+
     let rec parseLinksOrImg pType tokens =
         let (|ParseText|_|) flag tokens = 
+            // Perform extra check if Parsing for Image (flag = true)
             match flag,findTokenIdx Exclamation tokens with
             | true, None -> None
             | _,_ ->
@@ -155,19 +160,22 @@ let rec parser tokens =
                                        Some (inner,after)
             | _ -> None
 
+         // Set constants based on parseType
         let (initToken,typeConst,flag) =   
             match pType with
             | Image _ -> Exclamation,Image,true
             | Link  _ -> SBracketO,Link,false
             | _       -> failwithf "What? parseLinkOrImg should only take Image or Link as parse type" 
 
-
+        // parseLinksOrImg execution
         match tokens with
         | ParseText flag (before,text,ParseLink (link,after))
             -> match after with
-               | ParseTitle (title,after2)  // Has title
+               | ParseTitle (title,after2)  
+                    // Link with title
                     -> before @ [{linkText=text;linkDest=link;linkTitle=Some title}|>typeConst|>Styled] @ (parseLinksOrImg pType after2)
-               | _                          // No title
+               | _                          
+                    // Link without title
                     -> before @ [{linkText=text;linkDest=link;linkTitle=None}|>typeConst|>Styled] @ (parseLinksOrImg pType after)
         | _ 
             ->  let sIdx = findTokenIdx initToken tokens
@@ -177,17 +185,28 @@ let rec parser tokens =
                     before @ (parseLinksOrImg pType after1)
                 | None -> tokens
 
+
+
+
+
     let parseEmOrStrong pType tokens  =
+        // Delimiters for Strong and Emphasis
         let strongDelims = [(StrongOpenAst,StrongCloseAst,Strong);(StrongOpenUnd,StrongCloseUnd,Strong)]
         let empDelims    = [(EmpOpenAst,EmpCloseAst,Emphasis);(EmpOpenUnd,EmpCloseUnd,Emphasis)]
+
+        // Get Delimisters depending on parseType
         let delims = match pType with
                      | Strong    _  -> strongDelims
                      | Emphasis  _  -> empDelims
-                     | _ -> failwithf "What? parseEmOrStrong should only take Strong orEmphasis"
+                     | _ -> failwithf "What? parseEmOrStrong should only take Strong or Emphasis"
+
+        // Generic Emp of Strong Parser
         let rec innerFn (openTok,closeTok,typeConst) tokens = 
-            let innerFn = innerFn (openTok,closeTok,typeConst) //get specific em/strong parser
+            // Form Specific type of Parser
+            let innerFn = innerFn (openTok,closeTok,typeConst) 
             let sIdx    = tokens |> List.tryFindIndex (fun x->x =openTok)
             let eIdx i  = balancedCloseIdx openTok closeTok tokens i
+
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e 
                 ->  let (before,inner,after) = splitTokens tokens s e
@@ -196,17 +215,30 @@ let rec parser tokens =
                 ->  let (before,after) = tokens |> List.splitAt (s+1)
                     before @ (innerFn after)
             | _ -> tokens
+
+        // Make parsers based on delimiters
         let parsers = delims |> List.map innerFn
+
+        // Apply parsers sequentially
         (tokens,parsers) ||> List.fold (fun tokens p -> p tokens) 
-        
+
+
+
+
+
     let rec parseBreaks tokens = 
+        // Find the next Newline
         let eolIdx = tokens |> List.tryFindIndex (fun x->x =Newline)
+
+        // Helper function to split up and strip whitespace
         let performParse pType before n tokens=
             tokens |> List.splitAt (n+1)
                    |> snd
                    |> fun after -> (before |> stripWSHead |>List.rev)  
                                     @ [pType|>Styled]
                                     @ (after |> stripWSHead |> parseBreaks)
+
+        // Test for Softbreak and Hardbreak condition if Newline exists
         match eolIdx with 
         | None   -> tokens
         | Some n -> 
@@ -222,9 +254,14 @@ let rec parser tokens =
             | _ -> tokens                                               // No break
                    |> List.splitAt (n+1)
                    |> fun (before,after) ->  before @ (parseBreaks after)
-                 
 
-    let o = {linkDest=[];linkText=[];linkTitle=None}    //some generic LinkInfo
+
+
+                   
+    // Some generic LinkInfo
+    let o = {linkDest=[];linkText=[];linkTitle=None}    
+
+    // Main parsing execution
     tokens 
     |> parseCodeSpans 
     |> parseLinksOrImg (Image o)
@@ -233,5 +270,12 @@ let rec parser tokens =
     |> parseEmOrStrong (Emphasis [])
     |> parseBreaks
 
-let tokenList = inlineTokeniser ""
-parser tokenList
+
+
+// Top level function
+let inlineParser inputString =
+    let tokenList = inlineTokeniser inputString
+    parser tokenList
+
+
+inlineParser "Hello World"
