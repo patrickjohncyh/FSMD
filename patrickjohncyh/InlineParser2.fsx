@@ -1,36 +1,24 @@
 ﻿open System.Text.RegularExpressions
 
 type Token = 
-    | SBracketO
-    | SBracketC
-    | RBracketO
-    | RBracketC
-    | QuoteMark
-    | Whitespace
-    | Newline
-    | Exclamation
-    | Asterisk
-    | EmpOpen
-    | EmpClose
-    | StrongOpen
-    | StrongClose
-    | Underscore
-    | LessThan
-    | MoreThan
+    | SBracketO     | SBracketC      | RBracketO     | RBracketC       | QuoteMark  | Whitespace    
+    | Newline       | Exclamation    | Asterisk      | EmpOpenAst      | EmpCloseAst| EmpOpenUnd | EmpCloseUnd  
+    | StrongOpenAst | StrongCloseAst | StrongOpenUnd | StrongCloseUnd  | Underscore | LessThan   | MoreThan   
     | Backslash
-    | Escaped of string
-    | Text    of string
+    | Escaped     of string
+    | Text        of string
     | BacktickStr of int
-    | Styled  of InlineElement
+    | Styled      of InlineElement
 
 and InlineElement = 
-    | Link  of LinkInfo
-    | Image of LinkInfo
-    | Plain of Token list
+    | Link      of LinkInfo
+    | Image     of LinkInfo
+    | Plain     of Token list
     | CodeSpan  of Token list
-    | Strong of Token list
-    | Emphasis of Token list
+    | Strong    of Token list
+    | Emphasis  of Token list
     | Hardbreak 
+    | Softbreak
 
 and LinkInfo = {linkText:Token list;
                 linkDest: Token list; 
@@ -52,10 +40,14 @@ let rec inlineTokeniser txt =
             | RegexPrefix "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]" (str,remain) -> ((Escaped str),remain)
             | RegexPrefix "\\n"         (_,remain)   -> (Newline,remain)
             | RegexPrefix "[\\\]"          (str,remain) -> (Backslash,remain)
-            | RegexPrefix "\*\*\("         (_,remain)   -> (StrongOpen,remain)
-            | RegexPrefix "\)\*\*"         (_,remain)   -> (StrongClose,remain)
-            | RegexPrefix "\*\("         (_,remain)   -> (EmpOpen,remain)
-            | RegexPrefix "\)\*"         (_,remain)   -> (EmpClose,remain)
+            | RegexPrefix "\*\*\("         (_,remain)   -> (StrongOpenAst,remain)
+            | RegexPrefix "\)\*\*"         (_,remain)   -> (StrongCloseAst,remain)
+            | RegexPrefix "\*\("         (_,remain)   -> (EmpOpenAst,remain)
+            | RegexPrefix "\)\*"         (_,remain)   -> (EmpCloseAst,remain)
+            | RegexPrefix "__\("         (_,remain)   -> (StrongOpenUnd,remain)
+            | RegexPrefix "\)__"         (_,remain)   -> (StrongCloseUnd,remain)
+            | RegexPrefix "_\("         (_,remain)   -> (EmpOpenUnd,remain)
+            | RegexPrefix "\)_"         (_,remain)   -> (EmpCloseUnd,remain)
             | RegexPrefix "\<"          (_,remain)    -> (LessThan,remain)
             | RegexPrefix "\>"          (_,remain)    -> (MoreThan,remain)
             | RegexPrefix "\["          (_,remain)    -> (SBracketO,remain)
@@ -185,92 +177,61 @@ let rec parser tokens =
                     before @ (parseLinksOrImg pType after1)
                 | None -> tokens
 
-    let rec parseEmphasis tokens = 
-       let sIdx = tokens   |> List.tryFindIndex (fun x->x =EmpOpen)
-       let eIdx i = balancedCloseIdx EmpOpen EmpClose tokens i
-       match (sIdx,Option.bind eIdx sIdx)  with
-       | Some s,Some e 
-            ->  let (before,inner,after) = splitTokens tokens s e
-                before @ [parser inner|>Emphasis|>Styled] @ (parseEmphasis after)
-       | Some s, _    
-            ->  let (before,after) = tokens |> List.splitAt (s+1)
-                before @ (parseCodeSpans after)
-       | _ -> tokens
-
-    let rec parseStrong tokens = 
-       let sIdx = tokens   |> List.tryFindIndex (fun x->x =StrongOpen)
-       let eIdx i = balancedCloseIdx StrongOpen StrongClose tokens i
-       match (sIdx,Option.bind eIdx sIdx)  with
-       | Some s,Some e 
-            -> let(before,inner,after) = splitTokens tokens s e
-               before @ [parser inner|>Strong|>Styled] @ (parseStrong after)
-       | Some s, _     
-            -> let (before,after1) = tokens |> List.splitAt (s+1)
-               before @ (parseCodeSpans after1)
-       | _ -> tokens
-
-    let rec parseHardBreak tokens = 
+    let parseEmOrStrong pType tokens  =
+        let strongDelims = [(StrongOpenAst,StrongCloseAst,Strong);(StrongOpenUnd,StrongCloseUnd,Strong)]
+        let empDelims    = [(EmpOpenAst,EmpCloseAst,Emphasis);(EmpOpenUnd,EmpCloseUnd,Emphasis)]
+        let delims = match pType with
+                     | Strong    _  -> strongDelims
+                     | Emphasis  _  -> empDelims
+                     | _ -> failwithf "What? parseEmOrStrong should only take Strong orEmphasis"
+        let rec innerFn (openTok,closeTok,typeConst) tokens = 
+            let innerFn = innerFn (openTok,closeTok,typeConst) //get specific em/strong parser
+            let sIdx    = tokens |> List.tryFindIndex (fun x->x =openTok)
+            let eIdx i  = balancedCloseIdx openTok closeTok tokens i
+            match (sIdx,Option.bind eIdx sIdx)  with
+            | Some s,Some e 
+                ->  let (before,inner,after) = splitTokens tokens s e
+                    before @ [parser inner|>typeConst|>Styled] @ (innerFn after)
+            | Some s, _    
+                ->  let (before,after) = tokens |> List.splitAt (s+1)
+                    before @ (innerFn after)
+            | _ -> tokens
+        let parsers = delims |> List.map innerFn
+        (tokens,parsers) ||> List.fold (fun tokens p -> p tokens) 
+        
+    let rec parseBreaks tokens = 
         let eolIdx = tokens |> List.tryFindIndex (fun x->x =Newline)
+        let performParse pType before n tokens=
+            tokens |> List.splitAt (n+1)
+                   |> snd
+                   |> fun after -> (before |> stripWSHead |>List.rev)  
+                                    @ [pType|>Styled]
+                                    @ (after |> stripWSHead |> parseBreaks)
         match eolIdx with 
-        | None -> tokens
-        | Some 0
-            -> match tokens with
-               | [h]      -> [h]
-               | h::after -> h::(parseHardBreak after) 
-               | []       -> failwithf "What? tokens empty cannot happen since eolIdx=0"
-        | Some 1
-            -> match tokens with 
-               | Backslash::Newline::after  
-                    ->(Hardbreak|>Styled)::(parseHardBreak after) 
-               | h1::h2::after 
-                    -> h1::h2::(parseHardBreak after) 
-               | [_]       
-                    -> failwithf "What? single token cannot happen since eolIdx=1"
-               | []        
-                    -> failwithf "What? tokens empty cannot happen since eolIdx=1"
-        | Some n
-            -> match List.rev (tokens.[..n]) with
-               | Newline::Whitespace::Whitespace::before
-                    -> tokens 
-                       |> List.splitAt (n+1)
-                       |> snd
-                       |> fun after -> (before |> stripWSHead |>List.rev)  
-                                        @ [Hardbreak|>Styled]
-                                        @ (after |> stripWSHead |> parseHardBreak)  
-               | Newline::Backslash::before
-                    -> tokens
-                       |> List.splitAt (n+1)
-                       |> snd
-                       |> fun after -> List.rev before @ [Hardbreak|>Styled] @ (after |> stripWSHead |> parseHardBreak)   
-               | _  -> tokens 
-                       |> List.splitAt (n+1)
-                       |> fun (before,after) ->  before @ (parseHardBreak after)
-
+        | None   -> tokens
+        | Some n -> 
+            match List.rev tokens.[..n] with 
+            | []  -> failwithf "What? tokens empty cannot happen since eolIdx>=0"
+            | [h] -> [h]
+            | Newline::Backslash::before                                // Harbreak, Backslash
+                ->  performParse Hardbreak before n tokens             
+            | Newline::Whitespace::Whitespace::before                   // Hardbreak, >=2 Whitespace
+                ->  performParse Hardbreak before n tokens
+            | Newline::Whitespace::before                               // Softbreak, 1 Whitespace
+                ->  performParse Softbreak before n tokens               
+            | _ -> tokens                                               // No break
+                   |> List.splitAt (n+1)
+                   |> fun (before,after) ->  before @ (parseBreaks after)
+                 
 
     let o = {linkDest=[];linkText=[];linkTitle=None}    //some generic LinkInfo
     tokens 
     |> parseCodeSpans 
     |> parseLinksOrImg (Image o)
     |> parseLinksOrImg (Link  o) 
-    |> parseStrong 
-    |> parseEmphasis
-    |> parseHardBreak
+    |> parseEmOrStrong (Strong   [])
+    |> parseEmOrStrong (Emphasis [])
+    |> parseBreaks
 
-let tokenList = inlineTokeniser "lol  \n  lol" //![[*(emphasis)* within a link](www.google.com)"//"[hope this works](lol)"
-
-parser tokenList 
-
-
-
-
-(*
-// Auto Link :  "< Absolute URI >"
-// Absolute URI : "Scheme : ASCII (Exlcuding Ws < >)"   
-let (|AutoLink|_|) txt = 
-    let scheme = "[A-Za-z][A-Za-z0-9\+\-\.]{1,31}"
-    let uri    = "[^<>\\s]*"
-    let absoluteUri = scheme + ":" + uri
-    let uriPattern    = "<" + absoluteUri + ">"
-    matchRegex uriPattern txt 
-*)
-
+let tokenList = inlineTokeniser ""
+parser tokenList
