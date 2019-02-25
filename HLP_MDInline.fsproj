@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="testbench.fsx" />
+    <Compile Include="InlineParserTest.fs" />
     <Compile Include="InlineParser.fs" />
     <Compile Include="Program.fs" />
     <PackageReference Include="Expecto" Version="8.9.0" />

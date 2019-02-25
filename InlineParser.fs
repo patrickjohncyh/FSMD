@@ -1,30 +1,53 @@
-﻿module InlineParser
+module InlineParser
 
 open System.Text.RegularExpressions
 
+type InlineElement = 
+    | Link      of LinkInfo
+    | Image     of LinkInfo
+    | CodeSpan  of InlineElement list
+    | Strong    of InlineElement list
+    | Emphasis  of InlineElement list
+    | Text      of string
+    | Hardbreak 
+    | Softbreak
+
+and LinkInfo = {linkText  : InlineElement list;
+                linkDest  : InlineElement list; 
+                linkTitle : InlineElement list option} 
 type Token = 
     | SBracketO     | SBracketC      | RBracketO     | RBracketC       | QuoteMark  | Whitespace    
     | Newline       | Exclamation    | Asterisk      | EmpOpenAst      | EmpCloseAst| EmpOpenUnd | EmpCloseUnd  
     | StrongOpenAst | StrongCloseAst | StrongOpenUnd | StrongCloseUnd  | Underscore | LessThan   | MoreThan   
     | Backslash
     | Escaped     of string
-    | Text        of string
+    | Literal     of string
     | BacktickStr of int
     | Styled      of InlineElement
 
-and InlineElement = 
-    | Link      of LinkInfo
-    | Image     of LinkInfo
-    | Plain     of Token list
-    | CodeSpan  of Token list
-    | Strong    of Token list
-    | Emphasis  of Token list
-    | Hardbreak 
-    | Softbreak
 
-and LinkInfo = {linkText:Token list;
-                linkDest: Token list; 
-                linkTitle : Token list option}
+let (|Token2String|) token = 
+    let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";      RBracketC,"[";      QuoteMark,"\""; 
+                        Whitespace," "  ;       Newline, "\\n";      Exclamation,"!";    Asterisk,"*";       EmpOpenAst,"*(";
+                        EmpCloseAst,")*";       EmpOpenUnd,"_(";    EmpCloseUnd,")_";   Underscore,"_";     LessThan,"<";
+                        MoreThan,">";           Backslash,"\\";
+                        StrongOpenAst ,"**("
+                        StrongCloseAst,")**"
+                        StrongOpenUnd ,"__("
+                        StrongCloseUnd,")__"] |> Map.ofList
+
+                         
+    match token with
+    | Literal s -> s
+    | Escaped s -> s
+    | BacktickStr n -> "`" |> String.replicate n
+    | t             -> 
+        match (Map.tryFind t translation)  with
+        | Some s -> s
+        | None   -> failwithf "What? Trying to convert token with no translation to string"
+
+
+
 
 let (|RegexPrefix|_|) pat txt =
     let m = Regex.Match(txt,"^"+ pat)
@@ -41,7 +64,6 @@ let (|RegexPrefix2|_|) pat txt =
 
 let escapedPat = "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]"
 
-
 let rec inlineTokeniser txt = 
     match txt with
     | "" -> []
@@ -49,9 +71,8 @@ let rec inlineTokeniser txt =
         let (newToken,remain) = 
             match txt with
             | RegexPrefix2 escapedPat (str,remain) -> ((Escaped str.[1..]),remain)
-
-            | RegexPrefix "[\s]"   remain -> (Whitespace,remain)
             | RegexPrefix "\\n"    remain -> (Newline,remain)
+            | RegexPrefix "[\s]"   remain -> (Whitespace,remain)
             | RegexPrefix "[\\\]"  remain -> (Backslash,remain)
             | RegexPrefix "\*\*\(" remain -> (StrongOpenAst,remain)
             | RegexPrefix "\)\*\*" remain -> (StrongCloseAst,remain)
@@ -73,8 +94,8 @@ let rec inlineTokeniser txt =
             | RegexPrefix "[\"]"   remain -> (QuoteMark,remain)
 
             | RegexPrefix2 "[`]+"         (str,remain) -> (BacktickStr str.Length,remain)
-            | RegexPrefix2 "[A-Za-z0-9]+" (str,remain) -> ((Text str),remain)
-            | RegexPrefix2 "."            (str,remain) -> ((Text str),remain)
+            | RegexPrefix2 "[A-Za-z0-9]+" (str,remain) -> ((Literal str),remain)
+            | RegexPrefix2 "."            (str,remain) -> ((Literal str),remain)
             | _ -> failwithf "What? Should not happen as . Regex caputers all"
 
         match (inlineTokeniser remain) with
@@ -122,7 +143,33 @@ let splitTokens tokens s e =
     let after3 = after2 |> (function | t::rlst -> rlst |[]->[])
     (before,inner2,after3)
 
+let styledToInlineElement tokens =
+    tokens |> List.map (function | Styled a -> a| a -> failwithf "What? Should only be list of styled Tokens, %A" a)
+
 let rec parser tokens = 
+
+    // Converts reamaining tokens into Text InlineElement
+    // Will combine consecutive Text into a single Text
+    let parseText tokens =
+        let tokenToString token =
+            match token with
+            | Token2String str -> str
+
+        let convertToText state token =
+            let (accStr,out) = state
+            match accStr,token with
+            | "",Styled a   -> ("",Styled a::out)
+            | s ,Styled a   -> ("",Styled a::Styled (Text s)::out)
+            | s ,notStyled  -> 
+                let strToken = notStyled |> tokenToString 
+                (s+strToken,out)
+        (("",[]),tokens) 
+        ||> List.fold convertToText 
+        |>  function
+            | "",out -> out
+            | s ,out -> Styled(Text s)::out
+        |> List.rev
+
     let rec parseCodeSpans tokens =
         let sIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
 
@@ -134,7 +181,7 @@ let rec parser tokens =
         match (sIdx,Option.bind eIdx sIdx)  with
         | Some s,Some e 
             -> let (before,inner,after) = splitTokens tokens s e
-               before @ [inner|>CodeSpan|>Styled] @ (parseCodeSpans after)
+               before @ [inner |>parseText|>styledToInlineElement |>CodeSpan|>Styled] @ (parseCodeSpans after)
         | Some s, _     
             -> let (before,after) = tokens |> List.splitAt (s+1)
                before @ (parseCodeSpans after)
@@ -155,7 +202,7 @@ let rec parser tokens =
                 match (sIdx,Option.bind eIdx sIdx)  with
                 | Some s,Some e 
                     -> let (before,inner,after) = splitTokens tokens s e
-                       Some (before,parser inner,after)
+                       Some (before,parser inner |> styledToInlineElement ,after)
                 | _ -> None
 
         let rec (|ParseLink|_|) tokens = 
@@ -164,7 +211,7 @@ let rec parser tokens =
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e when s=0 
                 ->  let (before,inner,after) = splitTokens tokens s e
-                    if (before.Length < 2) then Some (inner,after) else None //1 or less items
+                    if (before.Length < 2) then Some (inner |> parseText |> styledToInlineElement,after) else None //1 or less items
             | _ -> None
 
         let (|ParseTitle|_|) tokens = 
@@ -172,7 +219,7 @@ let rec parser tokens =
             let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e when s=0-> let (before,inner,after) = splitTokens tokens s e
-                                       Some (inner,after)
+                                       Some (inner |> parseText |> styledToInlineElement,after)
             | _ -> None
 
          // Set constants based on parseType
@@ -203,7 +250,6 @@ let rec parser tokens =
 
 
 
-
     let parseEmOrStrong pType tokens  =
         // Delimiters for Strong and Emphasis
         let strongDelims = [(StrongOpenAst,StrongCloseAst,Strong);(StrongOpenUnd,StrongCloseUnd,Strong)]
@@ -225,7 +271,7 @@ let rec parser tokens =
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e 
                 ->  let (before,inner,after) = splitTokens tokens s e
-                    before @ [parser inner|>typeConst|>Styled] @ (innerFn after)
+                    before @ [parser inner|> styledToInlineElement |>typeConst|>Styled] @ (innerFn after)
             | Some s, _    
                 ->  let (before,after) = tokens |> List.splitAt (s+1)
                     before @ (innerFn after)
@@ -271,10 +317,10 @@ let rec parser tokens =
                    |> fun (before,after) ->  before @ (parseBreaks after)
 
 
-                   
+                          
     // Some generic LinkInfo
     let o = {linkDest=[];linkText=[];linkTitle=None}    
-
+    
     // Main parsing execution
     tokens 
     |> parseCodeSpans 
@@ -283,10 +329,17 @@ let rec parser tokens =
     |> parseEmOrStrong (Strong   [])
     |> parseEmOrStrong (Emphasis [])
     |> parseBreaks
+    |> parseText
 
-
-
+   
 // Top level function
 let inlineParser inputString =
     let tokenList = inlineTokeniser inputString
-    parser tokenList
+    tokenList 
+    |> parser 
+    |> styledToInlineElement
+
+
+inlineParser "Hello world"
+
+//inlineTokeniser "\n"
