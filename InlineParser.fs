@@ -1,4 +1,6 @@
-﻿open System.Text.RegularExpressions
+﻿module InlineParser
+
+open System.Text.RegularExpressions
 
 type Token = 
     | SBracketO     | SBracketC      | RBracketO     | RBracketC       | QuoteMark  | Whitespace    
@@ -288,6 +290,3 @@ let rec parser tokens =
 let inlineParser inputString =
     let tokenList = inlineTokeniser inputString
     parser tokenList
-
-
-inlineParser "[Hello](*(world)*)(lol lol)" 
