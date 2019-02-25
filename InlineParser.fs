@@ -27,7 +27,7 @@ type Token =
 
 
 let (|Token2String|) token = 
-    let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";      RBracketC,"[";      QuoteMark,"\""; 
+    let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";      RBracketC,")";      QuoteMark,"\""; 
                         Whitespace," "  ;       Newline, "\\n";      Exclamation,"!";    Asterisk,"*";       EmpOpenAst,"*(";
                         EmpCloseAst,")*";       EmpOpenUnd,"_(";    EmpCloseUnd,")_";   Underscore,"_";     LessThan,"<";
                         MoreThan,">";           Backslash,"\\";
@@ -340,6 +340,6 @@ let inlineParser inputString =
     |> styledToInlineElement
 
 
-inlineParser "Hello world"
+//inlineParser ""
 
 //inlineTokeniser "\n"
