@@ -27,41 +27,54 @@ and LinkInfo = {linkText:Token list;
 let (|RegexPrefix|_|) pat txt =
     let m = Regex.Match(txt,"^"+ pat)
     match m.Success with
-    | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
+    | true -> (txt.Substring(m.Value.Length)) |> Some
     | false -> None
     
-//########################## Tokenizer ##########################   
+let (|RegexPrefix2|_|) pat txt =
+    let m = Regex.Match(txt,"^"+ pat)
+    match m.Success with
+    | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
+    | false -> None
+
+
+let escapedPat = "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]"
+
+
 let rec inlineTokeniser txt = 
     match txt with
     | "" -> []
     | _  ->
         let (newToken,remain) = 
             match txt with
-            | RegexPrefix "\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]" (str,remain) -> ((Escaped str),remain)
-            | RegexPrefix "\\n"         (_,remain)   -> (Newline,remain)
-            | RegexPrefix "[\\\]"          (str,remain) -> (Backslash,remain)
-            | RegexPrefix "\*\*\("         (_,remain)   -> (StrongOpenAst,remain)
-            | RegexPrefix "\)\*\*"         (_,remain)   -> (StrongCloseAst,remain)
-            | RegexPrefix "\*\("         (_,remain)   -> (EmpOpenAst,remain)
-            | RegexPrefix "\)\*"         (_,remain)   -> (EmpCloseAst,remain)
-            | RegexPrefix "__\("         (_,remain)   -> (StrongOpenUnd,remain)
-            | RegexPrefix "\)__"         (_,remain)   -> (StrongCloseUnd,remain)
-            | RegexPrefix "_\("         (_,remain)   -> (EmpOpenUnd,remain)
-            | RegexPrefix "\)_"         (_,remain)   -> (EmpCloseUnd,remain)
-            | RegexPrefix "\<"          (_,remain)    -> (LessThan,remain)
-            | RegexPrefix "\>"          (_,remain)    -> (MoreThan,remain)
-            | RegexPrefix "\["          (_,remain)    -> (SBracketO,remain)
-            | RegexPrefix "\]"          (_,remain)    -> (SBracketC,remain)
-            | RegexPrefix "\("          (_,remain)    -> (RBracketO,remain)
-            | RegexPrefix "\)"          (_,remain)    -> (RBracketC,remain)
-            | RegexPrefix "_"           (_,remain)    -> (Underscore,remain)
-            | RegexPrefix "\*"         (_,remain)   ->  (Asterisk,remain)
-            | RegexPrefix "\!"         (_,remain)   ->  (Exclamation,remain)
-            | RegexPrefix "[\"]"         (_,remain)   ->  (QuoteMark,remain)
-            | RegexPrefix "[`]+"        (str,remain)  -> (BacktickStr str.Length,remain)
-            | RegexPrefix "[\s]"       (_,remain)    -> (Whitespace,remain)
-            | RegexPrefix "[A-Za-z0-9\.]*" (str,remain) -> ((Text str),remain)
-         //   | RegexPrefix "[^`*\s\[\]\(\)\\\]*" (str,remain) -> ((Text str),remain)
+            | RegexPrefix2 escapedPat (str,remain) -> ((Escaped str.[1..]),remain)
+
+            | RegexPrefix "[\s]"   remain -> (Whitespace,remain)
+            | RegexPrefix "\\n"    remain -> (Newline,remain)
+            | RegexPrefix "[\\\]"  remain -> (Backslash,remain)
+            | RegexPrefix "\*\*\(" remain -> (StrongOpenAst,remain)
+            | RegexPrefix "\)\*\*" remain -> (StrongCloseAst,remain)
+            | RegexPrefix "\*\("   remain -> (EmpOpenAst,remain)
+            | RegexPrefix "\)\*"   remain -> (EmpCloseAst,remain)
+            | RegexPrefix "__\("   remain -> (StrongOpenUnd,remain)
+            | RegexPrefix "\)__"   remain -> (StrongCloseUnd,remain)
+            | RegexPrefix "_\("    remain -> (EmpOpenUnd,remain)
+            | RegexPrefix "\)_"    remain -> (EmpCloseUnd,remain)
+            | RegexPrefix "\<"     remain -> (LessThan,remain)
+            | RegexPrefix "\>"     remain -> (MoreThan,remain)
+            | RegexPrefix "\["     remain -> (SBracketO,remain)
+            | RegexPrefix "\]"     remain -> (SBracketC,remain)
+            | RegexPrefix "\("     remain -> (RBracketO,remain)
+            | RegexPrefix "\)"     remain -> (RBracketC,remain)
+            | RegexPrefix "_"      remain -> (Underscore,remain)
+            | RegexPrefix "\*"     remain -> (Asterisk,remain)
+            | RegexPrefix "\!"     remain -> (Exclamation,remain)
+            | RegexPrefix "[\"]"   remain -> (QuoteMark,remain)
+
+            | RegexPrefix2 "[`]+"         (str,remain) -> (BacktickStr str.Length,remain)
+            | RegexPrefix2 "[A-Za-z0-9]+" (str,remain) -> ((Text str),remain)
+            | RegexPrefix2 "."            (str,remain) -> ((Text str),remain)
+            | _ -> failwithf "What? Should not happen as . Regex caputers all"
+
         match (inlineTokeniser remain) with
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
@@ -220,7 +233,7 @@ let rec parser tokens =
         let parsers = delims |> List.map innerFn
 
         // Apply parsers sequentially
-        (tokens,parsers) ||> List.fold (fun tokens p -> p tokens) 
+        (tokens,parsers) ||> List.fold (fun pTokens p -> p pTokens) 
 
 
 
@@ -256,7 +269,6 @@ let rec parser tokens =
                    |> fun (before,after) ->  before @ (parseBreaks after)
 
 
-
                    
     // Some generic LinkInfo
     let o = {linkDest=[];linkText=[];linkTitle=None}    
@@ -278,4 +290,4 @@ let inlineParser inputString =
     parser tokenList
 
 
-inlineParser "Hello World"
+inlineParser "[Hello](*(world)*)(lol lol)" 
