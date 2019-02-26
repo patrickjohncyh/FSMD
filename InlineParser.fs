@@ -146,6 +146,7 @@ let splitTokens tokens s e =
 let styledToInlineElement tokens =
     tokens |> List.map (function | Styled a -> a| a -> failwithf "What? Should only be list of styled Tokens, %A" a)
 
+
 let rec parser tokens = 
 
     // Converts reamaining tokens into Text InlineElement
@@ -170,6 +171,12 @@ let rec parser tokens =
             | s ,out -> Styled(Text s)::out
         |> List.rev
 
+    // Helper function to convert tokens to Text Inline Element
+    let toText tokens = 
+        tokens |> parseText |>styledToInlineElement
+
+
+
     let rec parseCodeSpans tokens =
         let sIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
 
@@ -181,7 +188,7 @@ let rec parser tokens =
         match (sIdx,Option.bind eIdx sIdx)  with
         | Some s,Some e 
             -> let (before,inner,after) = splitTokens tokens s e
-               before @ [inner |>parseText|>styledToInlineElement |>CodeSpan|>Styled] @ (parseCodeSpans after)
+               before @ [inner|>toText|>CodeSpan|>Styled] @ (parseCodeSpans after)
         | Some s, _     
             -> let (before,after) = tokens |> List.splitAt (s+1)
                before @ (parseCodeSpans after)
@@ -217,7 +224,7 @@ let rec parser tokens =
                     |> List.tryFind(fun x-> x=Whitespace)
                     |> function 
                         //Do not want whitespace, since whitespace == more than 1 literal
-                       | None   -> Some (stripInner |> parseText |> styledToInlineElement,after)
+                       | None   -> Some (stripInner |> toText,after)
                        | Some _ -> None
             | _ -> None
 
@@ -227,7 +234,7 @@ let rec parser tokens =
             let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e when s=0-> let (before,inner,after) = splitTokens tokens s e
-                                       Some (inner |> parseText |> styledToInlineElement,after)
+                                       Some (inner |>toText,after)
             | _ -> None
 
          // Set constants based on parseType
@@ -263,13 +270,13 @@ let rec parser tokens =
         let strongDelims = [(StrongOpenAst,StrongCloseAst,Strong);(StrongOpenUnd,StrongCloseUnd,Strong)]
         let empDelims    = [(EmpOpenAst,EmpCloseAst,Emphasis);(EmpOpenUnd,EmpCloseUnd,Emphasis)]
 
-        // Get Delimisters depending on parseType
+        // Get Delimiters depending on parseType
         let delims = match pType with
                      | Strong    _  -> strongDelims
                      | Emphasis  _  -> empDelims
                      | _ -> failwithf "What? parseEmOrStrong should only take Strong or Emphasis"
 
-        // Generic Emp of Strong Parser
+        // Generic Emp or Strong Parser
         let rec innerFn (openTok,closeTok,typeConst) tokens = 
             // Form Specific type of Parser
             let innerFn = innerFn (openTok,closeTok,typeConst) 
@@ -291,8 +298,7 @@ let rec parser tokens =
         // Apply parsers sequentially
         (tokens,parsers) ||> List.fold (fun pTokens p -> p pTokens) 
 
-
-
+                
 
 
     let rec parseBreaks tokens = 
@@ -320,7 +326,7 @@ let rec parser tokens =
                 ->  performParse Hardbreak before n tokens
             | Newline::Whitespace::before                               // Softbreak, 1 Whitespace
                 ->  performParse Softbreak before n tokens               
-            | _ -> tokens                                               // No break
+            | _ -> tokens                                               // No break, continue searching
                    |> List.splitAt (n+1)
                    |> fun (before,after) ->  before @ (parseBreaks after)
 
