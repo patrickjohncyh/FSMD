@@ -211,8 +211,18 @@ let rec parser tokens =
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e when s=0 
                 ->  let (before,inner,after) = splitTokens tokens s e
-                    if (before.Length < 2) then Some (inner |> parseText |> styledToInlineElement,after) else None //1 or less items
+                    printfn "%A" (before,after,inner)
+                    let stripInner =  inner |> stripWSHead |> stripWSTail
+                    stripInner 
+                    |> stripWSHead
+                    |> stripWSTail
+                    |> List.tryFind(fun x-> x=Whitespace)
+                    |> function 
+                        //Do not want whitespace, since whitespace == more than 1 literal
+                       | None   -> Some (stripInner |> parseText |> styledToInlineElement,after)
+                       | Some _ -> None
             | _ -> None
+
 
         let (|ParseTitle|_|) tokens = 
             let sIdx   = findTokenIdx RBracketO tokens
@@ -340,6 +350,7 @@ let inlineParser inputString =
     |> styledToInlineElement
 
 
-//inlineParser ""
-
-//inlineTokeniser "\n"
+//inlineParser "[test](one two)"
+//inlineParser "[test](google.com)"
+//inlineParser "[Test link](  www.google.com  )"
+//inlineTokeniser "[test](one two)"

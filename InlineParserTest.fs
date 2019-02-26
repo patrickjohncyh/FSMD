@@ -20,12 +20,17 @@ let testOfList groupName testFn testTripList =
     |> List.map (fun (idx,triple) -> makeTestCase testFn (groupName+"_"+string(idx)) triple)
     |> testList groupName
 
-//test for empty string         
-
+    
 
 [<Tests>]
 let textTest =
     let tests = [
+        (
+        "",
+        [],
+        "Empty input"
+        )
+
         (
         "Hello",
         [Text "Hello"],
@@ -54,52 +59,72 @@ let textTest =
 
 
 
-//[<Tests>]
-//let linkTest =
-    //let tests = [
-    //    (
-    //    "[Test link](www.google.com)",
-    //    [Link "Hello"],
-    //    "Link with no title"
-    //    )
+[<Tests>]
+let linkTestPositive =
+    let tests = [
+        (
+        "[Test link](www.google.com)",
+        [Link {linkText=[Text "Test link"];
+               linkDest=[Text "www.google.com"];
+               linkTitle=None}],
+        "Link with no title"
+        )
 
-    //    ("Hello World this is some text with numbers 1 2 3 4",
-    //     [Text "Hello World this is some text with numbers 1 2 3 4"],
-    //     "Sentence")
+        (
+        "[Test](www.google.com)(Some Title)",
+        [Link {linkText=[Text "Test"];
+               linkDest=[Text "www.google.com"];
+               linkTitle=Some [Text "Some Title"]}],
+        "Link with title"
+        )
 
-    //    (
-    //    "! @ # $ % ^ & * ( ) _ +",
-    //    [Text "! @ # $ % ^ & * ( ) _ +"],
-    //    "Symbols"
-    //    )
+        (
+        "[](www.google.com)",
+        [Link {linkText=[];
+               linkDest=[Text "www.google.com"];
+               linkTitle=None}],
+        "Link with no text and no title"
+        )
 
-    //    (
-    //    "! @ # T]e[[st $ > \\ Rand()m > ~!! * ! @... <x<x a_b_c \"Quoted\" ", 
-    //    [Text "! @ # T]e[[st $ > \\ Rand()m > ~!! * ! @... <x<x a_b_c \"Quoted\" "],
-    //    "Symbols and Text"
-    //    )
-    //]
+        (
+        "[my link]()",
+        [Link {linkText=[Text "my link"];
+               linkDest=[]
+               linkTitle=None}],
+        "Link with no dest and no title"
+        )
 
-    //("Text Parsing",inlineParser,tests) |||> testOfList
+        (
+        "[this is a [test] link](www.imperial.ac.uk)(imperial website)",
+        [Link {linkText=[Text "this is a [test] link"];
+               linkDest=[Text "www.imperial.ac.uk"];
+               linkTitle=Some [Text "imperial website"]}],
+        "Link with inner square brackets"
+        )
 
-    // Basic Tests
+    ]
 
-    // Link no title
-    // [Test link](www.google.com)
- 
-    // Link with title
-    // [Tes](www.google.com)(Title)
+    ("Link Parsing Positive",inlineParser,tests) |||> testOfList
 
-    // Link no text
-    // [](www.google.com)
+[<Tests>]
+let linkTestNegative =
+    let tests = [
+        (
+        "[No destination!]",
+        [Text "[No destination!]"],
+        "Link missing dest"
+        )
 
-    // Link no explicit dest
-    // [Test link)()
+        (
+        "[Imperial College](one two)",
+        [Text "[Imperial College](one two)" ],
+        "Link destination with more than 1 literal"
+        )
+
+    ]
 
 
-    // Link with inner sq brackets
-    // [Test[link]](google.com)
-
+    ("Link Parsing Negative",inlineParser,tests) |||> testOfList
     // Harder Tests
 
     // Link missing dest
