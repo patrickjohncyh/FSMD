@@ -211,11 +211,9 @@ let rec parser tokens =
             match (sIdx,Option.bind eIdx sIdx)  with
             | Some s,Some e when s=0 
                 ->  let (before,inner,after) = splitTokens tokens s e
-                    printfn "%A" (before,after,inner)
+                    //printfn "%A" (before,after,inner)
                     let stripInner =  inner |> stripWSHead |> stripWSTail
                     stripInner 
-                    |> stripWSHead
-                    |> stripWSTail
                     |> List.tryFind(fun x-> x=Whitespace)
                     |> function 
                         //Do not want whitespace, since whitespace == more than 1 literal

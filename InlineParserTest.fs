@@ -102,6 +102,38 @@ let linkTestPositive =
         "Link with inner square brackets"
         )
 
+        (
+        "[[Imperial College](https://tested.com)",
+        [Text "[" ;Link {linkText =[Text "Imperial College"];
+                          linkDest =[Text "https://tested.com"];
+                          linkTitle= None}],
+        "Link text [] edge case"
+        )
+
+        (
+        "[Test link](   www.google.com)",
+        [Link {linkText=[Text "Test link"];
+               linkDest=[Text "www.google.com"];
+               linkTitle=None}],
+        "Link with leading whitespace"
+        )
+
+        (
+        "[Test link](www.google.com   )",
+        [Link {linkText=[Text "Test link"];
+               linkDest=[Text "www.google.com"];
+               linkTitle=None}],
+        "Link with trailing whitespace"
+        )
+
+        (
+        "[Test link](   www.google.com   )",
+        [Link {linkText=[Text "Test link"];
+               linkDest=[Text "www.google.com"];
+               linkTitle=None}],
+        "Link with leading and trailing whitespace"
+        )
+
     ]
 
     ("Link Parsing Positive",inlineParser,tests) |||> testOfList
@@ -121,15 +153,11 @@ let linkTestNegative =
         "Link destination with more than 1 literal"
         )
 
+        (
+        "[Imperial College]](http://www.yahoo.com)",
+        [Text "[Imperial College]](http://www.yahoo.com)"],
+        "Link text [] not balanced"
+        )
     ]
 
-
     ("Link Parsing Negative",inlineParser,tests) |||> testOfList
-    // Harder Tests
-
-    // Link missing dest
-    // [Test]
-
-    // Link dest more than 1 literal
-    // [Test](one two)
-
