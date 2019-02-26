@@ -25,7 +25,7 @@ type Token =
     | BacktickStr of int
     | Styled      of InlineElement
 
-
+// Converts a token to string representation
 let (|Token2String|) token = 
     let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";      RBracketC,")";      QuoteMark,"\""; 
                         Whitespace," "  ;       Newline, "\\n";      Exclamation,"!";    Asterisk,"*";       EmpOpenAst,"*(";
@@ -35,19 +35,14 @@ let (|Token2String|) token =
                         StrongCloseAst,")**"
                         StrongOpenUnd ,"__("
                         StrongCloseUnd,")__"] |> Map.ofList
-
-                         
     match token with
     | Literal s -> s
     | Escaped s -> s
     | BacktickStr n -> "`" |> String.replicate n
-    | t             -> 
-        match (Map.tryFind t translation)  with
+    | tok             -> 
+        match (Map.tryFind tok translation)  with
         | Some s -> s
         | None   -> failwithf "What? Trying to convert token with no translation to string"
-
-
-
 
 let (|RegexPrefix|_|) pat txt =
     let m = Regex.Match(txt,"^"+ pat)
@@ -102,7 +97,6 @@ let rec inlineTokeniser txt =
         | [] -> [newToken]
         | tokenList -> newToken :: tokenList
 
-
 let rec stripWSHead tokens = 
             match tokens with
             | []      -> []
@@ -114,9 +108,11 @@ let rec stripWSTail tokens =
            |> List.rev 
            |> stripWSHead 
            |> List.rev
-
-let findTokenIdx token tokens = 
+           
+let (|FindTokenIdx|_|) token tokens = 
     tokens |> List.tryFindIndex (fun x -> x = token)
+
+let findTokenIdx = (|FindTokenIdx|_|)
 
 let balancedCloseIdx openTok closeTok tokens startIdx =
     let folder state tok = 
@@ -147,8 +143,32 @@ let styledToInlineElement tokens =
     tokens |> List.map (function | Styled a -> a| a -> failwithf "What? Should only be list of styled Tokens, %A" a)
 
 
-let rec parser tokens = 
+let (|TryParseWith|_|) openDelim closeDelim tokens = 
+    let sIdx   = findTokenIdx openDelim tokens
+    let eIdx i = balancedCloseIdx openDelim closeDelim tokens i
+    match (sIdx,Option.bind eIdx sIdx)  with
+    | Some s,Some e -> splitTokens tokens s e |> Some
+    | _ -> None
 
+
+let (|TryParseWithPrefix|_|) openDelim closeDelim tokens = 
+    let sIdx   = findTokenIdx openDelim tokens
+    let eIdx i = balancedCloseIdx openDelim closeDelim tokens i
+    match (sIdx,Option.bind eIdx sIdx)  with
+    | Some s,Some e when s=0 -> splitTokens tokens s e |> Some
+    | _ -> None
+
+let (|TryParseUntil|_|) token tokens = 
+    let sIdx   = findTokenIdx token tokens
+    match sIdx with
+    | Some s -> 
+        let (before,after) = tokens |> List.splitAt s 
+        let after2 = after |> (function t::rlst -> rlst |[]->[])
+        (before,after2) |> Some
+    | _ -> None
+
+
+let rec parser tokens = 
     // Converts reamaining tokens into Text InlineElement
     // Will combine consecutive Text into a single Text
     let parseText tokens =
@@ -173,9 +193,7 @@ let rec parser tokens =
 
     // Helper function to convert tokens to Text Inline Element
     let toText tokens = 
-        tokens |> parseText |>styledToInlineElement
-
-
+        tokens |> parseText |> styledToInlineElement
 
     let rec parseCodeSpans tokens =
         let sIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
@@ -195,166 +213,149 @@ let rec parser tokens =
         | _ -> tokens
 
 
+    let rec parseLinksOrImg  tokens =
+        let (|ParseText|_|) tokens = 
+            match tokens with 
+            | TryParseWith SBracketO SBracketC (before,inner,after)
+                -> Some (before,
+                         inner |> parser |> styledToInlineElement,
+                         after)
+            | _-> None
 
-
-
-    let rec parseLinksOrImg pType tokens =
-        let (|ParseText|_|) flag tokens = 
-            // Perform extra check if Parsing for Image (flag = true)
-            match flag,findTokenIdx Exclamation tokens with
-            | true, None -> None
-            | _,_ ->
-                let sIdx   = findTokenIdx SBracketO tokens
-                let eIdx i = balancedCloseIdx SBracketO SBracketC tokens i
-                match (sIdx,Option.bind eIdx sIdx)  with
-                | Some s,Some e 
-                    -> let (before,inner,after) = splitTokens tokens s e
-                       Some (before,parser inner |> styledToInlineElement ,after)
-                | _ -> None
+        let (|ParseTextImg|_|) tokens = 
+            match tokens with
+            | TryParseUntil Exclamation (before,ParseText(before2,inner,after))
+                -> Some (before@before2,
+                         inner,
+                         after)
+            | _ -> None
 
         let rec (|ParseLink|_|) tokens = 
-            let sIdx   = findTokenIdx RBracketO tokens
-            let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
-            match (sIdx,Option.bind eIdx sIdx)  with
-            | Some s,Some e when s=0 
-                ->  let (before,inner,after) = splitTokens tokens s e
-                    //printfn "%A" (before,after,inner)
-                    let stripInner =  inner |> stripWSHead |> stripWSTail
-                    stripInner 
-                    |> List.tryFind(fun x-> x=Whitespace)
-                    |> function 
-                        //Do not want whitespace, since whitespace == more than 1 literal
-                       | None   -> Some (stripInner |> toText,after)
+            match tokens with
+            | TryParseWithPrefix RBracketO RBracketC (before,inner,after)
+                -> let maybeLink = inner |> stripWSHead |> stripWSTail
+                   maybeLink 
+                   |> List.tryFind(fun x-> x=Whitespace)
+                   |> function 
+                        // Do not want whitespace, only want continuous text
+                       | None   -> Some (maybeLink|>toText,after)
                        | Some _ -> None
             | _ -> None
 
-
         let (|ParseTitle|_|) tokens = 
-            let sIdx   = findTokenIdx RBracketO tokens
-            let eIdx i = balancedCloseIdx RBracketO RBracketC tokens i
-            match (sIdx,Option.bind eIdx sIdx)  with
-            | Some s,Some e when s=0-> let (before,inner,after) = splitTokens tokens s e
-                                       Some (inner |>toText,after)
+            match tokens with 
+            | TryParseWithPrefix RBracketO RBracketC (before,inner,after)
+                // Unlike, Title can be arbitaraitly long 
+                -> Some (inner |>toText ,after)
             | _ -> None
 
-         // Set constants based on parseType
-        let (initToken,typeConst,flag) =   
-            match pType with
-            | Image _ -> Exclamation,Image,true
-            | Link  _ -> SBracketO,Link,false
-            | _       -> failwithf "What? parseLinkOrImg should only take Image or Link as parse type" 
-
-        // parseLinksOrImg execution
         match tokens with
-        | ParseText flag (before,text,ParseLink (link,after))
-            -> match after with
-               | ParseTitle (title,after2)  
-                    // Link with title
-                    -> before @ [{linkText=text;linkDest=link;linkTitle=Some title}|>typeConst|>Styled] @ (parseLinksOrImg pType after2)
-               | _                          
-                    // Link without title
-                    -> before @ [{linkText=text;linkDest=link;linkTitle=None}|>typeConst|>Styled] @ (parseLinksOrImg pType after)
-        | _ 
-            ->  let sIdx = findTokenIdx initToken tokens
-                match sIdx with
-                | Some s -> 
-                    let (before,after1) = tokens |> List.splitAt (s+1)
-                    before @ (parseLinksOrImg pType after1)
-                | None -> tokens
+        // Try to Parse Images
+        | ParseTextImg (before,text,ParseLink (link,after))
+             -> let basicLinkInfo = {linkText=text;linkDest=link;linkTitle=None}
+                match after with
+                | ParseTitle (title,after2)   // Image with title
+                    -> before @ [{basicLinkInfo with linkTitle=Some title}|>Image|>Styled] @ (parseLinksOrImg after2)
+                                             // Image without title
+                | _ -> before @ [basicLinkInfo|>Image|>Styled] @ (parseLinksOrImg after) 
+        // Try to Parse Links
+        | ParseText (before,text,ParseLink (link,after))
+            -> let basicLinkInfo = {linkText=text;linkDest=link;linkTitle=None}
+               match after with
+               | ParseTitle (title,after2) // Link with title 
+                    -> before @ [{basicLinkInfo with linkTitle=Some title}|>Link|>Styled] @ (parseLinksOrImg after2)
+                                           // Link without title
+                | _  -> before @ [basicLinkInfo|>Link|>Styled] @ (parseLinksOrImg after)
+        | _  
+            -> let idx =  match tokens with 
+                          | FindTokenIdx Exclamation idx -> Some idx 
+                          | FindTokenIdx SBracketO idx   -> Some idx
+                          | _ -> None
+               match idx with 
+               | Some idx -> tokens 
+                              |> List.splitAt (idx+1) 
+                              |> (fun (before,after)->before @ (parseLinksOrImg after))
+               | None -> tokens
+               
 
-
-
-
-    let parseEmOrStrong pType tokens  =
-        // Delimiters for Strong and Emphasis
-        let strongDelims = [(StrongOpenAst,StrongCloseAst,Strong);(StrongOpenUnd,StrongCloseUnd,Strong)]
-        let empDelims    = [(EmpOpenAst,EmpCloseAst,Emphasis);(EmpOpenUnd,EmpCloseUnd,Emphasis)]
-
-        // Get Delimiters depending on parseType
-        let delims = match pType with
-                     | Strong    _  -> strongDelims
-                     | Emphasis  _  -> empDelims
-                     | _ -> failwithf "What? parseEmOrStrong should only take Strong or Emphasis"
-
-        // Generic Emp or Strong Parser
-        let rec innerFn (openTok,closeTok,typeConst) tokens = 
-            // Form Specific type of Parser
-            let innerFn = innerFn (openTok,closeTok,typeConst) 
-            let sIdx    = tokens |> List.tryFindIndex (fun x->x =openTok)
-            let eIdx i  = balancedCloseIdx openTok closeTok tokens i
-
-            match (sIdx,Option.bind eIdx sIdx)  with
-            | Some s,Some e 
-                ->  let (before,inner,after) = splitTokens tokens s e
-                    before @ [parser inner|> styledToInlineElement |>typeConst|>Styled] @ (innerFn after)
-            | Some s, _    
-                ->  let (before,after) = tokens |> List.splitAt (s+1)
-                    before @ (innerFn after)
-            | _ -> tokens
-
-        // Make parsers based on delimiters
-        let parsers = delims |> List.map innerFn
+    let parseEmOrStrong typeConst delims tokens  =
+        let rec genericParser typeConst openDelim closeDelim tokens = 
+            let thisParser = genericParser typeConst openDelim closeDelim 
+            match tokens with
+            | TryParseWith openDelim closeDelim (before,inner,after)
+                ->  before 
+                    @ [parser inner|> styledToInlineElement |>typeConst|>Styled]
+                    @ (thisParser after)
+            | _
+                -> match tokens with
+                   | FindTokenIdx openDelim idx 
+                        ->  tokens 
+                            |> List.splitAt (idx+1)
+                            |> (fun (before,after) -> before @ (thisParser after))
+                   | _ -> tokens
+        // Make parsers based on delimiters and type constructor 
+        let parsers = delims 
+                    |> List.map (
+                        fun (od,cd) -> genericParser typeConst od cd)
 
         // Apply parsers sequentially
-        (tokens,parsers) ||> List.fold (fun pTokens p -> p pTokens) 
-
-                
+        (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
 
 
     let rec parseBreaks tokens = 
-        // Find the next Newline
-        let eolIdx = tokens |> List.tryFindIndex (fun x->x =Newline)
-
+       
         // Helper function to split up and strip whitespace
-        let performParse pType before n tokens=
+        let formatOutput pType before n tokens=
             tokens |> List.splitAt (n+1)
                    |> snd
                    |> fun after -> (before |> stripWSHead |>List.rev)  
                                     @ [pType|>Styled]
                                     @ (after |> stripWSHead |> parseBreaks)
 
+        // Find the next Newline
+        let eolIdx = tokens |> List.tryFindIndex (fun x->x =Newline)
+
         // Test for Softbreak and Hardbreak condition if Newline exists
-        match eolIdx with 
-        | None   -> tokens
-        | Some n -> 
-            match List.rev tokens.[..n] with 
-            | []  -> failwithf "What? tokens empty cannot happen since eolIdx>=0"
-            | [h] -> [h]
-            | Newline::Backslash::before                                // Harbreak, Backslash
-                ->  performParse Hardbreak before n tokens             
-            | Newline::Whitespace::Whitespace::before                   // Hardbreak, >=2 Whitespace
-                ->  performParse Hardbreak before n tokens
-            | Newline::Whitespace::before                               // Softbreak, 1 Whitespace
-                ->  performParse Softbreak before n tokens               
-            | _ -> tokens                                               // No break, continue searching
-                   |> List.splitAt (n+1)
-                   |> fun (before,after) ->  before @ (parseBreaks after)
+        match tokens with
+        | FindTokenIdx Newline n -> 
+                match List.rev tokens.[..n-1] with 
+                | []  -> failwithf "What? tokens empty cannot happen since eolIdx>=0"
+                | [h] -> [h]
+                | Backslash::before         
+                        // Harbreak, Backslash                     
+                    ->  formatOutput Hardbreak before n tokens 
+                
+                | Whitespace::Whitespace::before 
+                        // Hardbreak, >=2 Whitespace                  
+                    ->  formatOutput Hardbreak before n tokens
+                | before                               
 
+                    ->  formatOutput Softbreak before n tokens 
+        | _   -> tokens       
 
-                          
     // Some generic LinkInfo
-    let o = {linkDest=[];linkText=[];linkTitle=None}    
-    
+    let o = {linkDest=[];linkText=[];linkTitle=None}  
+    // Delimiters for Strong and Emphasis  
+    let strongDelims = [(StrongOpenAst,StrongCloseAst);(StrongOpenUnd,StrongCloseUnd)]
+    let empDelims   =  [(EmpOpenAst,EmpCloseAst);(EmpOpenUnd,EmpCloseUnd)]
+
+
     // Main parsing execution
     tokens 
     |> parseCodeSpans 
-    |> parseLinksOrImg (Image o)
-    |> parseLinksOrImg (Link  o) 
-    |> parseEmOrStrong (Strong   [])
-    |> parseEmOrStrong (Emphasis [])
+    |> parseLinksOrImg 
+    |> parseEmOrStrong Strong strongDelims
+    |> parseEmOrStrong Emphasis empDelims
     |> parseBreaks
     |> parseText
 
    
 // Top level function
 let inlineParser inputString =
-    let tokenList = inlineTokeniser inputString
-    tokenList 
+    inputString 
+    |> inlineTokeniser 
     |> parser 
     |> styledToInlineElement
 
 
-//inlineParser "[test](one two)"
-//inlineParser "[test](google.com)"
-//inlineParser "[Test link](  www.google.com  )"
-//inlineTokeniser "[test](one two)"
+//inlineParser "![img]()"
