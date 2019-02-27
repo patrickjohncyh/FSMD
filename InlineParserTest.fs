@@ -55,7 +55,7 @@ let textTest =
     ("Text Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
-let linkTestPositive =
+let linkTests =
     let tests = [
         (
         "[Test link](www.google.com)",
@@ -87,14 +87,6 @@ let linkTestPositive =
                linkDest=[]
                linkTitle=None}],
         "Link with no dest and no title"
-        )
-
-        (
-        "[this is a [test] link](www.imperial.ac.uk)(imperial website)",
-        [Link {linkText=[Text "this is a [test] link"];
-               linkDest=[Text "www.imperial.ac.uk"];
-               linkTitle=Some [Text "imperial website"]}],
-        "Link with inner square brackets"
         )
 
         (
@@ -149,38 +141,59 @@ let linkTestPositive =
 
     ]
 
-    ("Link Parsing Positive",inlineParser,tests) |||> testOfList
+    ("Link Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
-let linkTestNegative =
+let linkRefTest = 
     let tests = [
         (
-        "[No destination!]",
-        [Text "[No destination!]"],
-        "Link missing dest"
+        "[Some title][Some reference]",
+        [LinkRef {linkText = "Some title";
+                  linkRef  = "Some reference"}],
+        "Basic link reference"
+        )
+
+        (
+        "[Some title][]",
+        [LinkRef {linkText = "Some title";
+                  linkRef  = ""}],
+        "Basic link reference"
+        )
+
+        (
+        "[Some title]",
+        [LinkRef {linkText = "Some title";
+                  linkRef  = ""}],
+        "Shortcut link reference"
         )
 
         (
         "[Imperial College](one two)",
-        [Text "[Imperial College](one two)" ],
-        "Link destination with more than 1 literal"
+        [LinkRef {linkText = "Imperial College";
+                  linkRef  = ""};
+         Text "(one two)"],
+        "Shortcut when normal link fails"
         )
 
         (
         "[Imperial College]](http://www.yahoo.com)",
-        [Text "[Imperial College]](http://www.yahoo.com)"],
-        "Link text [] not balanced"
+        [LinkRef {linkText = "Imperial College";
+                  linkRef  = ""};
+         Text "](http://www.yahoo.com)"],
+        "Link ref when Link text [] not balanced"
         )
 
         (
         "[Imperial College] (http://www.yahoo.com)",
-        [Text "[Imperial College] (http://www.yahoo.com)"],
-        "Link space between [] and ()"
+        [LinkRef {linkText = "Imperial College";
+                  linkRef  = ""};
+         Text " (http://www.yahoo.com)"],
+        "LinkRef when Link has space between [] and ()"
         )
 
     ]
 
-    ("Link Parsing Negative",inlineParser,tests) |||> testOfList
+    ("LinkRef Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
 let breakTests =
@@ -237,7 +250,7 @@ let breakTests =
     ("Break Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
-let codeSpanTests =
+let codeSpanTest =
     let tests = [
         (
             "`code span contents`",
@@ -360,7 +373,7 @@ let strongTests =
     ("Strong Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
-let imageTestPositive =
+let imageTest =
     let tests = [
         (
         "![Test img](www.google.com/images/test.png)",
@@ -392,14 +405,6 @@ let imageTestPositive =
                linkDest=[];
                linkTitle=None}],
         "Image with no dest and no title"
-        )
-
-        (
-        "![this is a [test] img](www.imperial.ac.uk/logo.png)(imperial logo)",
-        [Image {linkText=[Text "this is a [test] img"];
-               linkDest=[Text "www.imperial.ac.uk/logo.png"];
-               linkTitle=Some [Text "imperial logo"]}],
-        "Image with inner square brackets"
         )
 
         (
@@ -454,35 +459,55 @@ let imageTestPositive =
 
     ]
 
-    ("Image Parsing Positive",inlineParser,tests) |||> testOfList
+    ("Image Parsing",inlineParser,tests) |||> testOfList
 
 [<Tests>]
-let imageTestNegative =
+let imageRefTest =
     let tests = [
         (
-        "![No destination!]",
-        [Text "![No destination!]"],
-        "Image missing dest"
+        "![Some title][Some reference]",
+        [ImageRef {linkText = "Some title";
+                   linkRef  = "Some reference"}],
+        "Basic image reference"
+        )
+
+        (
+        "![Some title][]",
+        [ImageRef {linkText = "Some title";
+                   linkRef  = ""}],
+        "Basic image reference no ref"
+        )
+
+        (
+        "![Some title]",
+        [ImageRef {linkText = "Some title";
+                   linkRef  = ""}],
+        "Shortcut image reference"
         )
 
         (
         "![Imperial College](one two)",
-        [Text "![Imperial College](one two)" ],
-        "Image destination with more than 1 literal"
+        [ImageRef {linkText = "Imperial College";
+                   linkRef  = ""};
+         Text "(one two)"],
+        "Shortcut when normal link fails"
         )
 
         (
         "![Imperial College]](http://www.yahoo.com)",
-        [Text "![Imperial College]](http://www.yahoo.com)"],
-        "Image text [] not balanced"
+        [ImageRef {linkText = "Imperial College";
+                   linkRef  = ""};
+         Text "](http://www.yahoo.com)"],
+        "Image ref when Imagae text [] not balanced"
         )
 
         (
-        "![Imperial College] (http://www.yahoo.com)",
-        [Text "![Imperial College] (http://www.yahoo.com)"],
-        "Image space between [] and ()"
+        "[Imperial College] (http://www.yahoo.com)",
+        [LinkRef {linkText = "Imperial College";
+                  linkRef  = ""};
+         Text " (http://www.yahoo.com)"],
+        "LinkRef when Link has space between [] and ()"
         )
-
     ]
 
-    ("Image Parsing Negative",inlineParser,tests) |||> testOfList
+    ("Image Ref Parsing",inlineParser,tests) |||> testOfList
