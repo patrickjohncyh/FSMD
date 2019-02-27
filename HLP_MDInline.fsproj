@@ -4,11 +4,13 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="InlineTypes.fs" />
+    <Compile Include="InlineParserHelpers.fs" />
     <Compile Include="InlineParser.fs" />
     <Compile Include="InlineParserTest.fs" />
-    <Compile Include="Program.fs" />
     <PackageReference Include="Expecto" Version="8.9.0" />
     <PackageReference Include="Expecto.FsCheck" Version="8.9.0" />
     <PackageReference Include="Expecto.BenchmarkDotNet" Version="8.9.0" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>

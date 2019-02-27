@@ -1,8 +1,10 @@
-﻿open System
+open System
 
+open InlineTypes
+open InlineParserHelpers
 open InlineParser
-open InlineParserTest
 
+open InlineParserTest
 
 open Expecto
 open FsCheck

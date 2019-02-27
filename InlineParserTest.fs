@@ -3,6 +3,9 @@ module InlineParserTest
 open System
 open Expecto
 open FsCheck
+
+open InlineTypes
+open InlineParserHelpers
 open InlineParser
 
 
@@ -34,6 +37,7 @@ let textTest =
         [Text "Hello"],
         "Single Word"
         )
+        
 
         ("Hello World this is some text with numbers 1 2 3 4",
          [Text "Hello World this is some text with numbers 1 2 3 4"],
@@ -43,6 +47,12 @@ let textTest =
         "! @ # $ % ^ & * ( ) _ +",
         [Text "! @ # $ % ^ & * ( ) _ +"],
         "Symbols"
+        )
+
+        (
+        "\! \" \# \$ \% \& \' \( \* \+ \, \- \. \/ \: \; \< \= \> \? \@ \[ \\\\ \] \^ \_ \' \{ \| \} \~",
+        [Text "! \" # $ % & ' ( * + , - . / : ; < = > ? @ [ \\ ] ^ _ ' { | } ~"],
+        "Escaped Punctuation"
         )
 
         (
