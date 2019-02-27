@@ -25,9 +25,9 @@ Two main steps are performed.
 2. Parsing
 
 ```
-		   		 string     ---------   Tokens	  --------    InlineElements
-			input   ---------> |Tokeniser|  -------> | Parser |  ---------------- > output 
-				            ---------	          --------
+   		 string     ---------   Tokens	  --------    InlineElements
+	input   ---------> |Tokeniser|  -------> | Parser |  ---------------- > output 
+		            ---------	          --------
 ```
 
 #### Tokenisation
@@ -46,10 +46,6 @@ Some examples of characters/strings and their corresponding tokens are :
 - `Hello  ---> Literal "Hello"`
 
 
-
-
-
-
 #### Parsing
 `parse : Token list -> Token list`
 
@@ -65,16 +61,13 @@ Token list --> |S1 P| -..-> |S4 P| --> Token list -->|StyledToInlineElement|--> 
 'S1 P' and 'S4 P' are parsers for Style 1 and Style 2 respectively
 ```
 
-
 The parsing step performs the detection and conversion of tokens into inline elements. 
 
 In order to enforce a heirarchy of binding of different styles, the parser will first try to parse the entire token list for one style before attempting to parse for another style.
 
-This is achieved by passing the `Token list` specific style parsing functions such as `parseCodeSpans` and `parseLinksOrImg`. Detected styles will be converted into a `Styled` token which is a wrapper for an `InlineElement` and will replace the original tokens which it represents. Wrapping with `Styled` token allows the `Token list` to be passed from one style parser.
+`Token list` is passed to specific style parsing functions such as `parseCodeSpans` and `parseLinksOrImg`. Detected styles will be converted into a `Styled` token which is a wraps an `InlineElement` and will replace the original tokens which it represents. Wrapping with `Styled` token allows the `Token list` to be passed from one style parser to another.
 
-The output of `parse` will be a `Token list` of **only** `Styled` tokens. This is then passed into a converter to extract the `InlineElement` from the `Styled` tokens and finally output an `InlineElement list`.
-
-
+The output of `parse` will be a `Token list` of **only** `Styled` tokens. This is then passed into a converter to unwrap the `InlineElement` from the `Styled` tokens and finally output an `InlineElement list`.
 
 
 The following inline styles are currently supported : 
@@ -87,6 +80,8 @@ The following inline styles are currently supported :
 Planned subsequent support in group phase:
 * `Katex`
 * `HTML`
+
+NB: Our version of Markdown from some of the original Markdown sytax.
 
 ## Testing
 

@@ -159,28 +159,28 @@ let linkRefTest =
         (
         "[Some title][Some reference]",
         [LinkRef {linkText = "Some title";
-                  linkRef  = "Some reference"}],
+                  linkRef  = Some "Some reference"}],
         "Basic link reference"
         )
 
         (
         "[Some title][]",
         [LinkRef {linkText = "Some title";
-                  linkRef  = ""}],
-        "Basic link reference"
+                  linkRef  = None}],
+        "Basic link reference, no reference"
         )
 
         (
         "[Some title]",
         [LinkRef {linkText = "Some title";
-                  linkRef  = ""}],
+                  linkRef  = None}],
         "Shortcut link reference"
         )
 
         (
         "[Imperial College](one two)",
         [LinkRef {linkText = "Imperial College";
-                  linkRef  = ""};
+                  linkRef  = None};
          Text "(one two)"],
         "Shortcut when normal link fails"
         )
@@ -188,7 +188,7 @@ let linkRefTest =
         (
         "[Imperial College]](http://www.yahoo.com)",
         [LinkRef {linkText = "Imperial College";
-                  linkRef  = ""};
+                  linkRef  = None};
          Text "](http://www.yahoo.com)"],
         "Link ref when Link text [] not balanced"
         )
@@ -196,7 +196,7 @@ let linkRefTest =
         (
         "[Imperial College] (http://www.yahoo.com)",
         [LinkRef {linkText = "Imperial College";
-                  linkRef  = ""};
+                  linkRef  = None};
          Text " (http://www.yahoo.com)"],
         "LinkRef when Link has space between [] and ()"
         )
@@ -477,46 +477,46 @@ let imageRefTest =
         (
         "![Some title][Some reference]",
         [ImageRef {linkText = "Some title";
-                   linkRef  = "Some reference"}],
+                   linkRef  = Some "Some reference"}],
         "Basic image reference"
         )
 
         (
         "![Some title][]",
         [ImageRef {linkText = "Some title";
-                   linkRef  = ""}],
+                   linkRef  = None}],
         "Basic image reference no ref"
         )
 
         (
-        "![Some title]",
+        "![Some title][ref]",
         [ImageRef {linkText = "Some title";
-                   linkRef  = ""}],
+                   linkRef  = Some "ref"}],
         "Shortcut image reference"
         )
 
         (
         "![Imperial College](one two)",
         [ImageRef {linkText = "Imperial College";
-                   linkRef  = ""};
+                   linkRef  = None};
          Text "(one two)"],
-        "Shortcut when normal link fails"
+        "Shortcut when normal image fails"
         )
 
         (
         "![Imperial College]](http://www.yahoo.com)",
         [ImageRef {linkText = "Imperial College";
-                   linkRef  = ""};
+                   linkRef  = None}
          Text "](http://www.yahoo.com)"],
-        "Image ref when Imagae text [] not balanced"
+        "Image ref when Image text [] not balanced"
         )
 
         (
         "[Imperial College] (http://www.yahoo.com)",
         [LinkRef {linkText = "Imperial College";
-                  linkRef  = ""};
+                  linkRef  = None}
          Text " (http://www.yahoo.com)"],
-        "LinkRef when Link has space between [] and ()"
+        "Image ref when Image has space between [] and ()"
         )
     ]
 

@@ -4,7 +4,7 @@ open InlineTypes
 open InlineParserHelpers
 
 let rec inlineTokeniser txt = 
-    let escapedPat = "\\\[!-/:-@\[-`{-~]"//"\\\[\\!-\\/\\:-\\@\\[-\\`\\{\\~]"
+    let escapedPat = "\\\[!-/:-@\[-`{-~]"
     match txt with
     | "" -> []
     | _  ->
@@ -61,9 +61,8 @@ let rec parser tokens =
         ||> List.fold combineAndConvertToText 
         |>  function
             | "",out -> out
-            | s ,out -> Styled(Text s)::out
+            | s ,out -> Styled(Text s)::out // Convert any remaining string
         |> List.rev
-
 
 
     // Convert tokens to Text Inline Elements
@@ -72,22 +71,22 @@ let rec parser tokens =
 
 
 
-    let rec parseCodeSpans tokens =
+    let rec parseCodeSpan tokens =
         let openDelimIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
         match openDelimIdx with 
         | Some idx ->
             let openDelim = tokens.[idx]
             match tokens with
             | TryParseWith openDelim openDelim (before,inner,after)
-                -> before @ [inner|>toText|>CodeSpan|>Styled] @ (parseCodeSpans after)
+                -> before @ [inner|>toText|>CodeSpan|>Styled] @ (parseCodeSpan after)
             | _ 
                 -> let (before,after) = tokens |> List.splitAt (idx+1)
-                   before @ (parseCodeSpans after)
+                   before @ (parseCodeSpan after)
         | None -> tokens
 
 
 
-    let rec parseLinksOrImg  tokens =
+    let rec parseLinksOrImg tokens =
         let makeLinkInfo text dest =  {linkText=text |> parser |> styledToInlineElement;
                                        linkDest=dest |> toText;
                                        linkTitle=None}
@@ -103,9 +102,9 @@ let rec parser tokens =
         match basicParse with
         | Some (before,linkInfo,after,typeConst)
             -> match after with 
-               | ParseTitle (title,after2) // Link with title 
-                     -> let linkTitle = title |> toText |> Some
-                        before @ [{linkInfo with linkTitle= linkTitle}|>typeConst|>Styled] @ (parseLinksOrImg after2)
+                | ParseTitle (title,after2) // Link with title 
+                    -> let linkTitle = title |> toText |> Some
+                       before @ [{linkInfo with linkTitle= linkTitle}|>typeConst|>Styled] @ (parseLinksOrImg after2)
                 | _                        // Link without title      
                     -> before @ [linkInfo|>typeConst|>Styled] @ (parseLinksOrImg after)
         | None  -> match tokens with 
@@ -116,9 +115,8 @@ let rec parser tokens =
                    | _ -> tokens
 
 
-
     //image ref or link ref
-    let rec parseLinkOrImgRefs tokens =
+    let rec parseLinkOrImgRef tokens =
         let basicParse = 
             match tokens with 
             | ParseTextImg (before,text,after)  when (not text.IsEmpty)
@@ -128,27 +126,23 @@ let rec parser tokens =
             | _ -> None
 
         match basicParse with
-        | Some (before,text,after,typeConst) 
-               -> match after with
+        | Some (before, text,after,typeConst) 
+               -> let textStr = text |> tokenList2String
+                  let refInfo = {linkText=textStr;linkRef = None}
+                  match after with
                   | ParseRef (refr,after2) 
-                      -> let textStr = text |> List.map token2String |> List.reduce (+)
-                         let refrStr = if refr.IsEmpty then "" else refr |> List.map token2String |> List.reduce (+)
-                         let refInfo = {linkText=textStr;linkRef =refrStr}
-                         before  @ [refInfo|>typeConst|>Styled] @ (parseLinkOrImgRefs after2)
-                  | _ -> let textStr = text |> List.map token2String |> List.reduce (+)
-                         let refInfo = {linkText=textStr;linkRef =""}
-                         before  @ [refInfo|>typeConst|>Styled] @ (parseLinkOrImgRefs after)
+                      -> before  @ [{refInfo with linkRef=refr}|>typeConst|>Styled] @ (parseLinkOrImgRef after2)
+                  | _ -> before  @ [refInfo|>typeConst|>Styled] @ (parseLinkOrImgRef after)
         | None -> match tokens with 
                    | FindTokenIdx SBracketO idx 
                         ->tokens 
                           |> List.splitAt (idx+1) 
-                          |> (fun (before,after)->before @ (parseLinkOrImgRefs after))
+                          |> (fun (before,after)->before @ (parseLinkOrImgRef after))
                    | _ -> tokens
                    
 
 
     let parseEmOrStrong typeConst delims tokens  =
-
         let rec genericParser typeConst openDelim closeDelim tokens = 
             let thisParser = genericParser typeConst openDelim closeDelim 
             match tokens with
@@ -165,8 +159,7 @@ let rec parser tokens =
                    | _ -> tokens
         // Make parsers based on delimiters and type constructor 
         let parsers = delims 
-                    |> List.map (
-                        fun (od,cd) -> genericParser typeConst od cd)
+                    |> List.map ( fun (oDelim,cDelim) -> (oDelim,cDelim) ||> genericParser typeConst )
 
         // Apply parsers sequentially
         (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
@@ -175,7 +168,9 @@ let rec parser tokens =
 
     let rec parseBreaks tokens = 
 
-        // Split up tokens and strip whitespace
+        // Split up tokens
+        // strip whitespace
+        // reverse before to original
         let makeOutput pType before n tokens=
             tokens |> List.splitAt (n+1)
                    |> snd
@@ -190,7 +185,7 @@ let rec parser tokens =
                     ->  makeOutput Hardbreak before n tokens 
                 | Whitespace::Whitespace::before  // Hardbreak, >=2 Whitespace                  
                     ->  makeOutput Hardbreak before n tokens
-                | before                               
+                | before                          // Softbrak, <2 Whitespace
                     ->  makeOutput Softbreak before n tokens 
         | _   -> tokens       
         
@@ -200,9 +195,9 @@ let rec parser tokens =
 
     // Main Parsing execution
     tokens 
-    |> parseCodeSpans 
-    |> parseLinksOrImg 
-    |> parseLinkOrImgRefs
+    |> parseCodeSpan
+    |> parseLinksOrImg
+    |> parseLinkOrImgRef
     |> parseEmOrStrong Strong strongDelims
     |> parseEmOrStrong Emphasis empDelims
     |> parseBreaks

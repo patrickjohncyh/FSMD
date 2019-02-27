@@ -1,4 +1,4 @@
-﻿module InlineTypes
+module InlineTypes
 
 
 type InlineElement = 
@@ -20,7 +20,7 @@ and LinkInfo =
 
 and LinkRefInfo =
     {linkText : string
-     linkRef  : string}
+     linkRef  : string option}
 
 type Token = 
     | SBracketO     | SBracketC      | RBracketO     | RBracketC       | QuoteMark  | Whitespace    

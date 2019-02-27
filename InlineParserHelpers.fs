@@ -40,6 +40,10 @@ let (|Token2String|) token =
 
 let token2String = (|Token2String|)
 
+let tokenList2String tokens = tokens
+                              |> List.map token2String
+                              |> List.reduce (+)                   
+
 let rec stripWSHead tokens = 
             match tokens with
             | []      -> []
@@ -99,8 +103,8 @@ let (|TryParseWithPrefix|_|) openDelim closeDelim tokens =
     let eIdx i = balancedCloseIdx openDelim closeDelim tokens i
     match (sIdx,Option.bind eIdx sIdx)  with
     | Some s,Some e when s=0 -> splitTokens tokens s e 
-                                |> fun (a,b,c) -> (b,c)
-                                |> Some
+                                |> fun (b,i,a) -> (i,a) // keep only inner and after 
+                                |> Some                 // before is only the delim
     | _ -> None
 
 let (|TryParseUntil|_|) token tokens = 
@@ -136,4 +140,17 @@ let rec (|ParseDest|_|) tokens =
     | _ -> None
 
 let (|ParseTitle|_|) tokens = tokens |> (|TryParseWithPrefix|_|) RBracketO RBracketC
-let (|ParseRef|_|)   tokens = tokens |> (|TryParseWithPrefix|_|) SBracketO SBracketC
+
+let (|ParseRef|_|)   tokens = 
+    match tokens with
+    | TryParseWithPrefix SBracketO SBracketC (refrece,after) ->
+        match refrece with
+        | [] -> (None, after) |> Some  //ref may be optionally omitted
+        | refr 
+            -> refr 
+               |> tokenList2String
+               |> Some
+               |> fun refrOpt -> (refrOpt,after) 
+               |> Some
+    | _ ->  None
+    
