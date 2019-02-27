@@ -180,16 +180,12 @@ let rec parser tokens =
             tokens |> List.splitAt (n+1)
                    |> snd
                    |> fun after -> (before |> stripWSHead |>List.rev) @ [pType|>Styled]  @ (after |> stripWSHead |> parseBreaks)
-
-        // Find the next Newline
-        let eolIdx =  tokens |> findTokenIdx Newline
-
+                   
         // Check for Softbreak and Hardbreak conditions if Newline exists
         match tokens with
         | FindTokenIdx Newline n -> 
                 match List.rev tokens.[..n-1] with 
-                | []  -> failwithf "What? tokens empty cannot happen since eolIdx>=0"
-                | [h] -> [h]
+                | []  -> []
                 | Backslash::before               // Harbreak, Backslash                     
                     ->  makeOutput Hardbreak before n tokens 
                 | Whitespace::Whitespace::before  // Hardbreak, >=2 Whitespace                  
