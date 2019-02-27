@@ -25,9 +25,9 @@ Two main steps are performed.
 2. Parsing
 
 ```
-		   		 	  string    ---------   Tokens	  --------    InlineElements
+		   		 string     ---------   Tokens	  --------    InlineElements
 			input   ---------> |Tokeniser|  -------> | Parser |  ---------------- > output 
-				 		 	    ---------			  --------
+				            ---------	          --------
 ```
 
 #### Tokenisation
@@ -56,9 +56,9 @@ Some examples of characters/strings and their corresponding tokens are :
 `StyledToInlineElement : Token list -> InlineElement list `
 
 ```
-                ----    	 ----    				  ---------------------
+                ----         ----    		      ---------------------
 Token list --> |S1 P| -..-> |S4 P| --> Token list -->|StyledToInlineElement|--> InlineElement list
-                ----	     ----	  (Styled only)  ---------------------
+                ----	     ----     (Styled only)   ---------------------
                  \_____________/
                       parse
                       
