@@ -94,7 +94,6 @@ Testing was performed using Expecto framework to verify that each supported styl
 
 The following table shows the features tested.
 
-<center>
 |  Feature Tested | Result |
 |:---------------:|:------:|
 |     Codespan    | Passed |
@@ -107,4 +106,3 @@ The following table shows the features tested.
 | Breaks          | Passed |
 | Text            | Passed |
 
-</center>
