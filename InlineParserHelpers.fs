@@ -1,4 +1,4 @@
-﻿module InlineParserHelpers
+module InlineParserHelpers
 
 
 open System.Text.RegularExpressions
@@ -28,7 +28,8 @@ let (|Token2String|) token =
                         EmpCloseUnd,")_";       Underscore,"_";     LessThan,"<";
                         MoreThan,">";           Backslash,"\\";
                         StrongOpenAst ,"**(";   StrongCloseAst,")**"
-                        StrongOpenUnd ,"__(";   StrongCloseUnd,")__" ] |> Map.ofList
+                        StrongOpenUnd ,"__(";   StrongCloseUnd,")__" ] 
+                       |> Map.ofList
     match token with
     | Literal s -> s
     | Escaped s -> s
@@ -44,19 +45,14 @@ let tokenList2String tokens = tokens
                               |> List.map token2String
                               |> List.reduce (+)                   
 
-let rec stripWSHead tokens = 
-            match tokens with
-            | []      -> []
-            | Whitespace::rlst ->  stripWSHead rlst
-            | _ -> tokens
+let stripWSHead tokens = 
+    tokens |> List.skipWhile (fun t -> t=Whitespace)
 
-let rec stripWSTail tokens = 
+let stripWSTail tokens = 
            tokens 
            |> List.rev 
            |> stripWSHead 
            |> List.rev
-
-
 
 // General Parsing Helpers
 let (|FindTokenIdx|_|) token tokens = 
@@ -81,6 +77,8 @@ let balancedCloseIdx openTok closeTok tokens startIdx =
     ||> List.fold folder 
     |> (function | 0,n -> Some n |l,_ -> None)
 
+// Split tokens into before,inner,after
+// based on the start and end indx of inner's Delimieters
 let splitTokens tokens s e = 
     let (before,after1) = tokens |> List.splitAt s
     let (inner,after2)  = after1  |> List.splitAt (e+1)
@@ -88,8 +86,10 @@ let splitTokens tokens s e =
     let after3 = after2 |> (function | t::rlst -> rlst |[]->[])
     (before,inner2,after3)
 
+// Unwraps Styled InlineElement
 let styledToInlineElement tokens =
     tokens |> List.map (function | Styled a -> a| a -> failwithf "What? Should only be list of styled Tokens, %A" a)
+
     
 let (|TryParseWith|_|) openDelim closeDelim tokens = 
     let sIdx   = findTokenIdx openDelim tokens
@@ -116,7 +116,19 @@ let (|TryParseUntil|_|) token tokens =
         (before,after2) |> Some
     | _ -> None
 
+// Called to parse remainder of tokens if 
+// original match failed to form a valid style
+let parseRest openDelim styleParser tokens =
+    match tokens with 
+    | FindTokenIdx openDelim idx 
+        ->tokens 
+          |> List.splitAt (idx+1) 
+          |> (fun (before,after)-> before @ (styleParser after))
+    | _ -> tokens
+    
+
 // Link and Image Parser Helpers
+
 let (|ParseTextLink|_|) tokens = tokens |> (|TryParseWith|_|) SBracketO SBracketC
 
 let (|ParseTextImg|_|) tokens = 
@@ -126,6 +138,13 @@ let (|ParseTextImg|_|) tokens =
                  inner,
                  after)
     | _ -> None
+
+// Configuration for parseLinksOrImg which can parse either
+let linkConfig  = ((|ParseTextLink|_|),Link )
+let imageConfig = ((|ParseTextImg|_|) ,Image)
+let linkRefConfig  = ((|ParseTextLink|_|),LinkRef )
+let imageRefConfig = ((|ParseTextImg|_|) ,ImageRef)
+
 
 let rec (|ParseDest|_|) tokens = 
     match tokens with
@@ -143,8 +162,8 @@ let (|ParseTitle|_|) tokens = tokens |> (|TryParseWithPrefix|_|) RBracketO RBrac
 
 let (|ParseRef|_|)   tokens = 
     match tokens with
-    | TryParseWithPrefix SBracketO SBracketC (refrece,after) ->
-        match refrece with
+    | TryParseWithPrefix SBracketO SBracketC (reference,after) ->
+        match reference with
         | [] -> (None, after) |> Some  //ref may be optionally omitted
         | refr 
             -> refr 

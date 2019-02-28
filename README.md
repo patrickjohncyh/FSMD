@@ -63,9 +63,11 @@ Token list --> |S1 P| -..-> |S4 P| --> Token list -->|StyledToInlineElement|--> 
 
 The parsing step performs the detection and conversion of tokens into inline elements. 
 
-In order to enforce a heirarchy of binding of different styles, the parser will first try to parse the entire token list for one style before attempting to parse for another style.
+In order to enforce a heirarchy of binding of different inline styles, the parser will first try to parse the entire token list for one style before attempting to parse for another style.
 
-`Token list` is passed to specific style parsing functions such as `parseCodeSpans` and `parseLinksOrImg`. Detected styles will be converted into a `Styled` token which is a wraps an `InlineElement` and will replace the original tokens which it represents. Wrapping with `Styled` token allows the `Token list` to be passed from one style parser to another.
+`Token list` is passed to functions that parse specific inline styles such as `parseCodeSpans` and `parseImage`. Detected styles will be converted into a `Styled` token which is a wraps an `InlineElement` and will replace the original tokens which it represents. Wrapping `InlineElement` with a `Styled` token allows the `Token list` to be passed from a parser for one style to another. 
+
+Due to the recursive nature of parsing, the style parsers are as subfunctions of `parse`. In some instances, the style parsers are generated from a more general parser due to similarities how two differnet styles are parsed. For exmaple, Images and Links are almost exactly the same with the exception of an addition `!` for Images. Hence, `parseImage` and `parseLink` are both derived from the same parser but each with unique configurations.
 
 The output of `parse` will be a `Token list` of **only** `Styled` tokens. This is then passed into a converter to unwrap the `InlineElement` from the `Styled` tokens and finally output an `InlineElement list`.
 
@@ -81,11 +83,16 @@ Planned subsequent support in group phase:
 * `Katex`
 * `HTML`
 
-NB: Our version of Markdown from some of the original Markdown sytax.
+NB:\ 
+Our version of Markdown differs from some of the original Markdown sytax.
+* Addtion of `(` `)` for Emphasis and Strong i.e `*(Emphasized)*` to reduce ambiguity of what is styled
+* Change of optional Link Title syntax from `[...](... "optional title")` to `[...](...)(optional title)`
 
 ## Testing
 
-Testing was performed using Expecto framework to verify that each supported style is detected and represented correctly. This was done using small handwritten test cases which aim to test both the basic functionality of each style, their pontential variations and corner cases.
+Testing was performed using Expecto framework to verify that each supported inline style is detected and represented correctly. This was done using small handwritten unit test cases which aim to test both the basic detection and conversion of each inline style, their pontential variations and corner cases.
+
+Furthermore, there a few test which attempt to combine various inline style together.
 
 The following table shows the features tested.
 

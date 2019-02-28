@@ -85,89 +85,50 @@ let rec parser tokens =
         | None -> tokens
 
 
-
-    let rec parseLinksOrImg tokens =
+    // Image or Link parser
+    let rec parseLinkOrImg config tokens =
         let makeLinkInfo text dest =  {linkText=text |> parser |> styledToInlineElement;
                                        linkDest=dest |> toText;
                                        linkTitle=None}
-        let basicParse =
-            match tokens with
-            // Try to Parse text and dest of Image or Link
-            | ParseTextImg (before,text,ParseDest (dest,after))
-                -> Some (before,makeLinkInfo text dest,after,Image)
-            | ParseTextLink (before,text,ParseDest (dest,after))
-                -> Some (before,makeLinkInfo text dest,after,Link)
-            | _ -> None 
-       
-        match basicParse with
-        | Some (before,linkInfo,after,typeConst)
-            -> match after with 
-                | ParseTitle (title,after2) // Link with title 
-                    -> let linkTitle = title |> toText |> Some
-                       before @ [{linkInfo with linkTitle= linkTitle}|>typeConst|>Styled] @ (parseLinksOrImg after2)
-                | _                        // Link without title      
-                    -> before @ [linkInfo|>typeConst|>Styled] @ (parseLinksOrImg after)
-        | None  -> match tokens with 
-                   | FindTokenIdx SBracketO idx 
-                        ->tokens 
-                          |> List.splitAt (idx+1) 
-                          |> (fun (before,after)->before @ (parseLinksOrImg after))
-                   | _ -> tokens
+        // Build specific parser for recursive call  
+        let thisParser = parseLinkOrImg config  
+        let ( (|ParseText|_|) , typeConst) = config
 
+        match tokens with
+            | ParseText (before,text,ParseDest (dest,after))
+                ->  let linkInfo = (text,dest) ||> makeLinkInfo 
+                    match after with 
+                    | ParseTitle (title,after2) // Link/Image with title 
+                        -> let linkTitle = title |> toText |> Some
+                           before @ [{linkInfo with linkTitle=linkTitle}|>typeConst|>Styled] @ (thisParser after2)
+                    | _                        // Link/Image without title      
+                        -> before @ [linkInfo|>typeConst|>Styled] @ (thisParser after)
+            | _ -> tokens |> parseRest SBracketO thisParser 
+    // Build parsers based on config        
+    let parseImage = parseLinkOrImg imageConfig
+    let parseLink  = parseLinkOrImg linkConfig
 
-    //image ref or link ref
-    let rec parseLinkOrImgRef tokens =
-        let basicParse = 
-            match tokens with 
-            | ParseTextImg (before,text,after)  when (not text.IsEmpty)
-                -> (before,text,after,ImageRef) |> Some
-            | ParseTextLink (before,text,after) when (not text.IsEmpty)
-                -> (before,text,after,LinkRef)  |> Some
-            | _ -> None
+    //Image Reference or Link Reference parser
+    let rec parseLinkOrImgRef config tokens =
+        // Build specific parser for recursive call
+        let thisParser = parseLinkOrImgRef config 
+        let ( (|ParseText|_|) , typeConst) = config
+        match tokens with 
+        | ParseText (before,(text:Token list),after)  when (not text.IsEmpty)
+            -> let textStr = text |> tokenList2String
+               let refInfo = {linkText=textStr;linkRef = None}
+               match after with
+               | ParseRef (refr,after2) 
+                   -> before  @ [{refInfo with linkRef=refr}|>typeConst|>Styled] @ (thisParser after2)
+               | _ -> before  @ [refInfo|>typeConst|>Styled] @ (thisParser after)
+        | _ -> tokens |> parseRest SBracketO thisParser 
 
-        match basicParse with
-        | Some (before, text,after,typeConst) 
-               -> let textStr = text |> tokenList2String
-                  let refInfo = {linkText=textStr;linkRef = None}
-                  match after with
-                  | ParseRef (refr,after2) 
-                      -> before  @ [{refInfo with linkRef=refr}|>typeConst|>Styled] @ (parseLinkOrImgRef after2)
-                  | _ -> before  @ [refInfo|>typeConst|>Styled] @ (parseLinkOrImgRef after)
-        | None -> match tokens with 
-                   | FindTokenIdx SBracketO idx 
-                        ->tokens 
-                          |> List.splitAt (idx+1) 
-                          |> (fun (before,after)->before @ (parseLinkOrImgRef after))
-                   | _ -> tokens
-                   
-
-
-    let parseEmOrStrong typeConst delims tokens  =
-        let rec genericParser typeConst openDelim closeDelim tokens = 
-            let thisParser = genericParser typeConst openDelim closeDelim 
-            match tokens with
-            | TryParseWith openDelim closeDelim (before,inner,after)
-                ->  before 
-                    @ [parser inner|> styledToInlineElement |>typeConst|>Styled]
-                    @ (thisParser after)
-            | _
-                -> match tokens with
-                   | FindTokenIdx openDelim idx 
-                        ->  tokens 
-                            |> List.splitAt (idx+1)
-                            |> (fun (before,after) -> before @ (thisParser after))
-                   | _ -> tokens
-        // Make parsers based on delimiters and type constructor 
-        let parsers = delims 
-                    |> List.map ( fun (oDelim,cDelim) -> (oDelim,cDelim) ||> genericParser typeConst )
-
-        // Apply parsers sequentially
-        (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
-
+    // Build parsers based on config
+    let parseImageRef = parseLinkOrImgRef imageRefConfig
+    let parseLinkRef  = parseLinkOrImgRef linkRefConfig
 
 
     let rec parseBreaks tokens = 
-
         // Split up tokens
         // strip whitespace
         // reverse before to original
@@ -188,18 +149,45 @@ let rec parser tokens =
                 | before                          // Softbrak, <2 Whitespace
                     ->  makeOutput Softbreak before n tokens 
         | _   -> tokens       
-        
+
+
+    let parseEmOrStrong config tokens  =
+        let (delims,typeConst) = config
+
+        let rec genericParser typeConst openDelim closeDelim tokens = 
+            let thisParser = genericParser typeConst openDelim closeDelim 
+            match tokens with
+            | TryParseWith openDelim closeDelim (before,inner,after)
+                ->  before 
+                    @ [parser inner|> styledToInlineElement |>typeConst|>Styled]
+                    @ (thisParser after)
+            | _
+                -> tokens |> parseRest openDelim thisParser
+
+        // Build parsers based on delimiters and type constructor 
+        let parsers = delims 
+                    |> List.map ( fun (oDelim,cDelim) -> (oDelim,cDelim) ||> genericParser typeConst )
+        // Apply parsers sequentially
+        (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
+
     // Delimiters for Strong and Emphasis  
-    let strongDelims = [(StrongOpenAst,StrongCloseAst);(StrongOpenUnd,StrongCloseUnd)]
-    let empDelims   =  [(EmpOpenAst,EmpCloseAst);(EmpOpenUnd,EmpCloseUnd)]
+    let strongConfig = ([(StrongOpenAst,StrongCloseAst);(StrongOpenUnd,StrongCloseUnd)],Strong)
+    let empConfig    = ([(EmpOpenAst,EmpCloseAst);(EmpOpenUnd,EmpCloseUnd)],Emphasis)
+
+    // Build parsers based on config
+    let parseStrong   =  parseEmOrStrong strongConfig
+    let parseEmphasis =  parseEmOrStrong empConfig 
+
 
     // Main Parsing execution
     tokens 
     |> parseCodeSpan
-    |> parseLinksOrImg
-    |> parseLinkOrImgRef
-    |> parseEmOrStrong Strong strongDelims
-    |> parseEmOrStrong Emphasis empDelims
+    |> parseImage
+    |> parseLink
+    |> parseImageRef
+    |> parseLinkRef
+    |> parseStrong
+    |> parseEmphasis
     |> parseBreaks
     |> parseText
 

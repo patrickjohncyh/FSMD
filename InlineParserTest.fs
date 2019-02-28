@@ -521,3 +521,58 @@ let imageRefTest =
     ]
 
     ("Image Ref Parsing",inlineParser,tests) |||> testOfList
+
+
+[<Tests>]
+let MixedStylesTest =
+    let tests = [
+        (
+        "Emphasising some *([My link](google.com))*",
+        [Text "Emphasising some ";
+         Emphasis [Link {linkText = [Text "My link"];
+                         linkDest = [Text "google.com"];
+                         linkTitle= None} ]],
+        "Emphasising a Link"
+        )
+
+        (
+        "Link with [**(Escaped)** punctuation \! and `Code span inside!!`](google.com)",
+        [Text "Link with "
+         Link {linkText = [Strong [Text "Escaped"]
+                           Text " punctuation ! and "
+                           CodeSpan [Text "Code span inside!!"]];
+               linkDest = [Text "google.com"];
+               linkTitle= None}],
+        "Link with styled text"
+        )
+
+        (
+        "`let a = 5`. This is F# syntax  \n    where a is immutable\n   and has type `int`",
+         [CodeSpan [Text "let a = 5"]
+          Text ". This is F# syntax"
+          Hardbreak
+          Text "where a is immutable"
+          Softbreak
+          Text "and has type "
+          CodeSpan [Text "int"]],
+         "Mixing code span and breaks"
+
+        )
+
+        (
+        "Our device SUSH uses the Spectral Sensor ([AS7262](https://ams.com/as7262)) provided in conjunction with a Proximity Sensor (![VCNL4010](https://www.vishay.com/doc?83462))",
+        [Text "Our device SUSH uses the Spectral Sensor ("
+         Link {linkText = [Text "AS7262"];
+               linkDest = [Text "https://ams.com/as7262"];
+               linkTitle= None};
+         Text ") provided in conjunction with a Proximity Sensor ("
+         Image {linkText = [Text "VCNL4010"];
+               linkDest = [Text "https://www.vishay.com/doc?83462"];
+               linkTitle= None};
+         Text ")"],
+        "Real usecase example"
+        )
+
+
+    ]
+    ("Mixed Styles Parsing",inlineParser,tests) |||> testOfList
