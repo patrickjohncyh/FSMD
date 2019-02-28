@@ -8,6 +8,17 @@ open BlockParser
 open FsCheck
 open Expecto
 
+// to use this in the future, more generalised unit testing
+// code from Patrick
+let makeTestCase testFn testName (testInput,expOutput,msg) = 
+    testCase testName <| fun () ->
+        Expect.equal (testFn testInput)  expOutput msg
+
+let testOfList groupName testFn testTripList = 
+    testTripList 
+    |> List.indexed
+    |> List.map (fun (idx,triple) -> makeTestCase testFn (groupName+"_"+string(idx)) triple)
+    |> testList groupName
 [<Tests>]
 /// RegexPat should only split if a match is found at the beginning of string
 let RegexPatCorrectTest =
