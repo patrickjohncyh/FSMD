@@ -15,8 +15,6 @@ let (|RegexPat|_|) pat txt =
                  | _ -> None
     | false -> None
 
-/// take in a line of string, do regex, and outputs a tuple of (BlockId*string)
-
 ///Strips away the first '[' and the last ']:' from a link reference definition, returns a string of link ref content
 let (|LRefTextId|_|) aLine =
     match aLine with
@@ -201,7 +199,13 @@ let testFilePath = @"markdown.txt"
 let linesList = fileStream testFilePath
                |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
 
+/// RawBlock list to be sent to Block Dispatcher          
 let a =
     match (blockParser linesList) with
         | Ok res  -> (fst res)
+        | Error e -> []
+/// LinkRefD list to be sent to Block Dispatcher          
+let b =
+    match (blockParser linesList) with
+        | Ok res  -> (snd res)
         | Error e -> []
