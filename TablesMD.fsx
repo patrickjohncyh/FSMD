@@ -2,7 +2,7 @@ open System.Text.RegularExpressions
 
 type Block =
     | Table of TableCells    //put into generic block handler
-//  | NumberList               //List
+//  | NumberList               //List in tables might be implemented during group stage
 
 and TableCells = {
     headerRow : InlineElement List List;
@@ -10,56 +10,128 @@ and TableCells = {
 }
 
 and InlineElement = 
-    | Link    
-    | StrongBox
-    | Emphasis
-    | Plain     
+    | Link      of LinkInfo
+    | Image     of LinkInfo
+    | CodeSpan  of InlineElement list
+    | Strong    of InlineElement list
+    | Emphasis  of InlineElement list
+    | Text      of string
+    | Hardbreak 
+    | Softbreak
+    | LinkRef   of LinkRefInfo
+    | ImageRef  of LinkRefInfo
+
+and LinkInfo = 
+    {linkText  : InlineElement list;
+     linkDest  : InlineElement list; 
+     linkTitle : InlineElement list option} 
+
+and LinkRefInfo =
+    {linkText : string
+     linkRef  : string} 
 
 type TableTokens = 
-    | RowEnd   |DelimRow    |EndTable                    // | CssOpen    |CssClose    | Newline    | Whitespace  
+    | NewRow   |DelimCell                   // | CssOpen    |CssClose    | Newline    | Whitespace  
     | Cell of string
-    | CellContent of string  
 
-let (|Regex|_|) pat txt =                   //detects pattern(at first char in string) and returns remaining string. Detected pattern value not stored. 
-    let m = Regex.Match(txt,"^"+ pat)       //^ checked: always checks first char onwards of string, not anywhere else 
+let (|Regex|_|) pat txt =                                                   //detects pattern(at first char in string) and returns remaining string. Detected pattern value not stored. 
+    let m = Regex.Match(txt,"^"+ pat)                                       //always checks first char onwards of string, not anywhere else 
     match m.Success with
     | true -> (txt.Substring(m.Value.Length)) |> Some
     | false -> None
 
-let (|RegexExtract|_|) pat txt =            //extracts relevant data from a cell               
+let (|RegexExtract|_|) pat txt =                                            //extracts only relevant data from a cell             
     let m = Regex.Match(txt,"^"+ pat)               
     match m.Success with
     | true -> (m.Value) |> Some
     | false -> None
 
-let (|RegexKeepContent|_|) pat txt =        //detects pattern and returns (token value, remainingRawInput)
+let (|RegexSplitTableToCells|_|) pat txt =                                  //detects entire cells and returns (singleCell, remainingRawInput)
     let m = Regex.Match(txt, pat)
     match m.Success with
     | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
     | false -> None
 
-let extractCellContent cell =
-    match cell with
-    | RegexExtract "([^\|\s])([\s]*[\S]+)*" cellContent -> CellContent cellContent 
-
-let rec tableTokeniser txt =        //input: entire table string, each row separated by /n. output: a list of tabletokens(rep. the entire table) containing Cellcontents, RowEnd, DelimRow
-    match txt with
-    | "|" -> [EndTable]
+let rec tableTokeniser tableStr =                                           //input: entire table string, each row separated by /n. output: a list of tabletokens(rep. the entire table) containing Cellcontents, RowEnd, DelimRow
+    match tableStr with
+    | "|" -> []     //end of table
     | _  ->
         let (matchedToken, remainingRawInput) = 
-            match txt with
-            | Regex "\|\n" remainingRawInput -> (RowEnd,remainingRawInput)                      //checked. To end the row "|\n". NOTE: final RowEnd issue
-            | Regex "\| +\-{3,} *" remainingRawInput -> (DelimRow,remainingRawInput)            //checked. To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
-            | RegexKeepContent "^\| +((\\\\\|)|[^\|])*" (cell,remainingRawInput) -> 
-                    (CellContent (extractCellContent cell),remainingRawInput)                     //checked. To match |nx where n=at least 1 space, x= any character or "\|"  
+            match tableStr with
+            | Regex "\| *\n *" remainingRawInput -> (NewRow,remainingRawInput)                                                          // To end the row "|abc", where a,c = 0 or more whitespace, b = newline 
+            | Regex "\| +\-{3,} *" remainingRawInput -> (DelimCell,remainingRawInput)                                                   // To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
+            | RegexSplitTableToCells "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)     // To match |nx where n=at least 1 space, x= any character or "\|"  . 
             | _ -> failwithf "Does not contain table format."
 
         match (tableTokeniser remainingRawInput) with
         | [] -> [matchedToken]
         | tokenList -> matchedToken :: tokenList
 
-  
+let inlineParser (inputString : string) : InlineElement List = 
+    failwithf "completed by another team member"
+
+let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElement List List List) = 
+    
+    let (|FirstCellIndexOf|_|) (token:TableTokens) =                                //returns first index of the specified token 
+        List.tryFindIndex (fun x -> x = token) 
+
+    let removeCellsWith (token:TableTokens) = List.filter (fun x -> x <> token)     //removes specified token from the entire list     
+    
+    let extractCellContent = function                                               //converts Cell to string then extracts cell data, throwing away any formatting whitespace 
+        | Cell str -> 
+            match str with
+            | RegexExtract "([^\|\s])([\s]*[\S]+)*" cellContent -> cellContent 
+            | _ -> ""       //empty cell
+
+        | _ -> failwithf "should only be Cell type! unknown type detected!"
 
 
+    let rec parseCellContent = function                                             //pass to inLineParser to handle styles 
+        | h :: t -> 
+            (inlineParser h) :: parseCellContent t
+
+        | [] -> []
+
+    let rec splitIntoRows lst =                                                     //splits (token list) into (token list list) at every NewRow token
+        match lst with 
+        | FirstCellIndexOf NewRow index ->
+            lst.[0..(index - 1)] :: (splitIntoRows lst.[(index + 1)..])
+
+        | _ -> [lst]
+
+    let headerList =                                                                //token list->InlineElement List List
+        match lst with
+        | FirstCellIndexOf DelimCell index when (index > 0) ->
+            lst.[0..(index-1)]
+            |> removeCellsWith NewRow
+            |> List.map extractCellContent
+            |> parseCellContent 
+
+        | FirstCellIndexOf DelimCell index when (index = 0) ->
+                failwithf "table header missing"
+
+        | _ -> failwithf "no delimiter row detected! table body missing"      
+
+    let bodyList =                                                                  //token list -> InlineElement List List List
+        match lst with
+        | FirstCellIndexOf DelimCell index when (index > 0) ->
+            lst.[(index + 1)..]
+            |> removeCellsWith DelimCell
+            |> splitIntoRows
+            |> List.map (List.map extractCellContent)
+            |> List.map parseCellContent
+
+        | FirstCellIndexOf DelimCell index when (index = 0) ->
+            failwithf "table header missing"
+
+        | _ -> failwithf "no delimiter row detected! table body missing"     
+
+    (headerList, bodyList)
 
 
+  //Top level function
+let tableHandler str =
+    let tokenisedTableList = tableTokeniser str
+    let (headerList, bodyListList) =
+        tableParser tokenisedTableList
+    Table {headerRow = headerList ; bodyRows = bodyListList}
