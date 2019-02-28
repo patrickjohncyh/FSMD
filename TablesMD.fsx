@@ -41,12 +41,12 @@ let (|Regex|_|) pat txt =                                                   //de
     | false -> None
 
 let (|RegexExtract|_|) pat txt =                                            //extracts only relevant data from a cell             
-    let m = Regex.Match(txt,"^"+ pat)               
+    let m = Regex.Match(txt,pat)               
     match m.Success with
     | true -> (m.Value) |> Some
     | false -> None
 
-let (|RegexSplitTableToCells|_|) pat txt =                                  //detects entire cells and returns (singleCell, remainingRawInput)
+let (|RegexSplitCellFromTable|_|) pat txt =                                  //detects entire cells and returns (singleCell, remainingRawInput)
     let m = Regex.Match(txt, pat)
     match m.Success with
     | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
@@ -54,21 +54,21 @@ let (|RegexSplitTableToCells|_|) pat txt =                                  //de
 
 let rec tableTokeniser tableStr =                                           //input: entire table string, each row separated by /n. output: a list of tabletokens(rep. the entire table) containing Cellcontents, RowEnd, DelimRow
     match tableStr with
-    | "|" -> []     //end of table
+    | Regex "\|[\s]*$" remainingRawInput -> []                              //end of table 
     | _  ->
         let (matchedToken, remainingRawInput) = 
             match tableStr with
             | Regex "\| *\n *" remainingRawInput -> (NewRow,remainingRawInput)                                                          // To end the row "|abc", where a,c = 0 or more whitespace, b = newline 
             | Regex "\| +\-{3,} *" remainingRawInput -> (DelimCell,remainingRawInput)                                                   // To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
-            | RegexSplitTableToCells "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)     // To match |nx where n=at least 1 space, x= any character or "\|"  . 
+            | RegexSplitCellFromTable "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)     // To match |nx where n=at least 1 space, x= any character or "\|"  . 
             | _ -> failwithf "Does not contain table format."
 
         match (tableTokeniser remainingRawInput) with
         | [] -> [matchedToken]
         | tokenList -> matchedToken :: tokenList
 
-let inlineParser (inputString : string) : InlineElement List = 
-    failwithf "completed by another team member"
+let inlineParser (inputString : string) : InlineElement List =                      //stub test function. Written by another teammate.
+    [Text inputString] 
 
 let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElement List List List) = 
     
@@ -94,8 +94,13 @@ let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElem
 
     let rec splitIntoRows lst =                                                     //splits (token list) into (token list list) at every NewRow token
         match lst with 
-        | FirstCellIndexOf NewRow index ->
+        | FirstCellIndexOf NewRow index when (index > 0) ->
             lst.[0..(index - 1)] :: (splitIntoRows lst.[(index + 1)..])
+
+        | FirstCellIndexOf NewRow index when (index = 0) ->
+            match lst with 
+            | h :: t -> splitIntoRows t
+            | _ -> []                                                               // in case table ends with newline
 
         | _ -> [lst]
 
@@ -135,3 +140,6 @@ let tableHandler str =
     let (headerList, bodyListList) =
         tableParser tokenisedTableList
     Table {headerRow = headerList ; bodyRows = bodyListList}
+
+  //Test
+tableHandler "|  Name   |    Age   |\n| --- |\n|  Raymond | 23 |  \n  |   Patrick | 24 |  \n"
