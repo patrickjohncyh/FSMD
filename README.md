@@ -98,5 +98,10 @@ This is done by REGEX, active patterns, and partial active patterns
 ## Testing
 For now, testing is done by simple unit tests from Expecto. In the future, I will add FsCheck to
 do randomised testing, which is good in catching corner cases in parsing.
+
+Some problems are faced with Expecto when I try to do unit testing on own record types, for some reason
+it works on F# Interactive but doesn't pass in Expecto.
+Some problem with whitespace it seems.
+
 Nevertheless, markdown is a language that has many ambiguity in it, which is a price for being a human-readable
 HTML generator.
