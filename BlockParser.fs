@@ -94,7 +94,7 @@ let (|BlockIdentifier|) str =
     | _                                              -> (Paragraph, str) // else, parse the entire line as paragraph
 
 /// parse line by line, convert each line into a tuple of (Block*string) and then group them accordingly
-let parseBlocks stringList = 
+let blockParser stringList = 
     /// function to convert each line into a tuple of (Block*string) and put in a list
     match stringList with
     | Some sList -> /// accummulate a list of RawBlock 
@@ -181,9 +181,9 @@ let parseBlocks stringList =
     | Some sList when sList.IsEmpty -> Error <| sprintf "Parsing failed, initial input string list is empty"
     | None -> Error <| sprintf "Parsing failed, no input list is given"
 
-//==========================================================
-//          Main Execution of blockParser
-//==========================================================
+//===============================================================================================================
+//                                    Main Execution of blockParser
+//===============================================================================================================
  
 /// given a path with markdown file inside, read line by line and store in an array
 let fileStream (fPath:string) =
@@ -194,8 +194,14 @@ let fileStream (fPath:string) =
     | :? System.UnauthorizedAccessException -> Error <| sprintf "Non authorized access to file"
     | :? System.IO.FileNotFoundException    -> Error <| sprintf "Could not find the file %A" fPath
 
+/// markdown test file
+let testFilePath = @"markdown.txt"
+
 /// convert string array into list array
-let lineList = fileStream @"markdown.txt"
+let linesList = fileStream testFilePath
                |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
 
-let a = parseBlocks lineList
+let a =
+    match (blockParser linesList) with
+        | Ok res  -> (fst res)
+        | Error e -> []

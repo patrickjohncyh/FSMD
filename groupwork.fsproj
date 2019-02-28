@@ -7,6 +7,10 @@
 
   <ItemGroup>
     <Content Include="markdown.txt" />
+    <Compile Include="BlockParserTypes.fs" />
+    <Compile Include="BlockParser.fs" />
+    <Compile Include="BlockParserTests.fs" />
+    <Compile Include="BlockDispatcher.fs" />
     <Compile Include="Program.fs" />
     <None Include="block_parse.fsx" />
   </ItemGroup>

@@ -12,7 +12,6 @@ type BlockId =
     | Paragraph
     | BlockQuote 
     | List
-    | ListItem
     | CodeBlock
     | ThematicBreak
     | BlankLine

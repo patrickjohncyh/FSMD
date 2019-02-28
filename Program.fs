@@ -4,8 +4,7 @@ open BlockParser
 open BlockParserTests
 open Expecto
 
-let testsWithExpecto() =
-        runTests defaultConfig testListWithExpecto |> ignore
+let expectoConfig = {defaultConfig with verbosity = Logging.LogLevel.Debug}
 let allTestsWithExpecto() =
         runTestsInAssembly defaultConfig [||]
 [<EntryPoint>]
