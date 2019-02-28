@@ -58,7 +58,7 @@ Token list --> |S1 P| -..-> |S4 P| --> Token list -->|StyledToInlineElement|--> 
                  \_____________/
                       parse
                       
-'S1 P' and 'S4 P' are parsers for Style 1 and Style 2 respectively
+'S1 P' and 'S4 P' are parsers for Style 1 and Style 4 respectively
 ```
 
 The parsing step performs the detection and conversion of tokens into inline elements. 
