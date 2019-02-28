@@ -93,7 +93,7 @@ Our version of Markdown differs from some of the original Markdown sytax.
 
 ## Testing
 
-Testing was performed using Expecto framework to verify that each supported inline style is detected and represented correctly. This was done using small handwritten unit test cases which aim to test both the basic detection and conversion of each inline style, their pontential variations and corner cases.
+Testing was performed using Expecto framework to verify that the tokeniser and each supported inline style is detected and represented correctly. This was done using small handwritten unit test cases which aim to test both the basic detection and conversion of each inline style, their pontential variations and corner cases.
 
 A few tests which combine various inline styles together were also included.
 
@@ -101,6 +101,7 @@ The following table shows the features tested.
 
 |  Feature Tested | Result |
 |:---------------:|:------:|
+|     Tokeniser   | Passed |
 |     Codespan    | Passed |
 |       Link      | Passed |
 |      Image      | Passed |
