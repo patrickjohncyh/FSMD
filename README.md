@@ -84,16 +84,16 @@ I use a lot of pattern match, maybe in the future I will explore some ways to ma
 
 ### LRefCheck
 When a block is identified as a `LRefDec`, it goes into the function `lRefHandler` which determine whether 
-the `LRefDec` block is valid or not, else it needs to be changed to a `Paragraph`
-A link definition in markdown is:
-[linktext]: /url "title"
-**OR**
-[linktext]: /url 'title'
-However, a Link Reference Declaration doesn't need to have a title.
+the `LRefDec` block is valid or not, else it needs to be changed to a `Paragraph`.  
+A link definition in markdown is  
+[linktext]: /url \"title\"   
+**OR**  
+[linktext]: /url 'title'  
+However, a Link Reference Declaration doesn't need to have a title. 
 The way I do this is to check one by one, from `LinkText` to `LinkURL` to `LinkTitle`, and whenever
 an error is catched that indicates that it is an invalid Link Reference Declaration, the entire
 string content is categorised into a `Paragraph` block
-This is done by REGEX, active patterns, and partial active patterns
+This is done by REGEX, active patterns, and partial active patterns.
 
 ## Testing
 For now, testing is done by simple unit tests from Expecto. In the future, I will add FsCheck to
