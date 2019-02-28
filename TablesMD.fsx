@@ -142,4 +142,4 @@ let tableHandler str =
     Table {headerRow = headerList ; bodyRows = bodyListList}
 
   //Test
-tableHandler "|  Name   |    Age   |\n| --- |\n|  Raymond | 23 |  \n  |   Patrick | 24 |  \n"
+tableHandler "|  Name   |    Age   |\n| --- |\n|  Tom | 23 |  \n  |   Adam | 24 |  \n"
