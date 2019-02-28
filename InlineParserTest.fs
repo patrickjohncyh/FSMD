@@ -22,7 +22,18 @@ let testOfList groupName testFn testTripList =
     |> List.indexed
     |> List.map (fun (idx,triple) -> makeTestCase testFn (groupName+"_"+string(idx)) triple)
     |> testList groupName
-      
+
+(*
+    Test case format
+    ----------------
+    ( 
+    Input...,
+    Expected ...,
+    Info ...
+    )
+
+*)
+
 [<Tests>]
 let textTest =
     let tests = [
@@ -148,7 +159,6 @@ let linkTests =
           Text "(not a title"],
          "Link incomplete title"
          )
-
     ]
 
     ("Link Parsing",inlineParser,tests) |||> testOfList
@@ -200,7 +210,6 @@ let linkRefTest =
          Text " (http://www.yahoo.com)"],
         "LinkRef when Link has space between [] and ()"
         )
-
     ]
 
     ("LinkRef Parsing",inlineParser,tests) |||> testOfList
@@ -255,7 +264,6 @@ let breakTests =
          Text "Break Parsing with extra white space"],
          "Hard break with extra white space"
         )
-
     ]
     ("Break Parsing",inlineParser,tests) |||> testOfList
 

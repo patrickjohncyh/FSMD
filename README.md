@@ -65,7 +65,7 @@ The parsing step performs the detection and conversion of tokens into inline ele
 
 In order to enforce a heirarchy of binding of different inline styles, the parser will first try to parse the entire token list for one style before attempting to parse for another style.
 
-`Token list` is passed to functions such as `parseCodeSpan` and `parseImage` that parse specific inline styles . Detected styles will be converted into a `Styled` token which is wraps an `InlineElement` and will replace the original tokens which it now represents. Wrapping `InlineElement` with a `Styled` token allows the `Token list` to be passed from one style parser to another. 
+`Token list` is passed to functions such as `parseCodeSpan` and `parseImage` that parse specific inline styles . Detected styles will be converted into a `Styled` token which wraps an `InlineElement` and will replace the original tokens which it now represents. Wrapping `InlineElement` with a `Styled` token allows the `Token list` to be passed from one style parser to another. 
 
 Due to the recursive nature of parsing, the style parsers are subfunctions of `parse`. In some instances, the style parsers are generated from a more general parser due to similarities of how two differnet styles are parsed. For exmaple, Images and Links are almost exactly the same with the exception of an additional `!` for Images. Hence, `parseImage` and `parseLink` are both derived from the same parser but each with unique configurations.
 
@@ -74,7 +74,8 @@ The output of `parse` will be a `Token list` of **only** `Styled` tokens. This i
 
 The following inline styles are currently supported : 
 * `CodeSpan`
-* `Links, Images + References`
+* `Links, Images`
+* `Link Reference, Image Reference`
 * `Emphasis, Strong`
 * `Breaks`
 * `Text`
@@ -82,6 +83,8 @@ The following inline styles are currently supported :
 Planned subsequent support in group phase:
 * `Katex`
 * `HTML`
+
+The parser has been written such that adding a new style can be done by passing the `Token list` through an additional style parser.
 
 NB:   
 Our version of Markdown differs from some of the original Markdown sytax.

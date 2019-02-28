@@ -18,8 +18,8 @@ let (|RegexPrefix2|_|) pat txt =
     | true -> (m.Value, txt.Substring(m.Value.Length)) |> Some
     | false -> None
 
-   
-// Converts a token to equivalent string
+
+// Converts a token to equivalent string representation
 let (|Token2String|) token = 
     let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";     
                         RBracketC,")";          QuoteMark,"\"";     Whitespace," ";
@@ -55,11 +55,14 @@ let stripWSTail tokens =
            |> List.rev
 
 // General Parsing Helpers
-let (|FindTokenIdx|_|) token tokens = 
-    tokens |> List.tryFindIndex (fun x -> x = token)
+let (|FindTokenIdx|_|) tokenToFind tokens = 
+    tokens |> List.tryFindIndex (fun t -> t = tokenToFind)
 
 let findTokenIdx = (|FindTokenIdx|_|)
 
+// Determines the index at which
+// open and close delimiters are balanced
+// starting from a given start index
 let balancedCloseIdx openTok closeTok tokens startIdx =
     let folder state tok = 
         let (lvl,idx) = state
@@ -78,7 +81,7 @@ let balancedCloseIdx openTok closeTok tokens startIdx =
     |> (function | 0,n -> Some n |l,_ -> None)
 
 // Split tokens into before,inner,after
-// based on the start and end indx of inner's Delimieters
+// based on the start and relative end index of inner's Delimieters
 let splitTokens tokens s e = 
     let (before,after1) = tokens |> List.splitAt s
     let (inner,after2)  = after1  |> List.splitAt (e+1)
@@ -90,7 +93,9 @@ let splitTokens tokens s e =
 let styledToInlineElement tokens =
     tokens |> List.map (function | Styled a -> a| a -> failwithf "What? Should only be list of styled Tokens, %A" a)
 
-    
+// Tries to extract the inner componenet between
+// two balanced delimiters
+// Returns the (before,inner,after) option     
 let (|TryParseWith|_|) openDelim closeDelim tokens = 
     let sIdx   = findTokenIdx openDelim tokens
     let eIdx i = balancedCloseIdx openDelim closeDelim tokens i
@@ -98,6 +103,7 @@ let (|TryParseWith|_|) openDelim closeDelim tokens =
     | Some s,Some e -> splitTokens tokens s e |> Some
     | _ -> None
 
+// openDelim must be the first token in tokens
 let (|TryParseWithPrefix|_|) openDelim closeDelim tokens = 
     let sIdx   = findTokenIdx openDelim tokens
     let eIdx i = balancedCloseIdx openDelim closeDelim tokens i
@@ -106,7 +112,7 @@ let (|TryParseWithPrefix|_|) openDelim closeDelim tokens =
                                 |> fun (b,i,a) -> (i,a) // keep only inner and after 
                                 |> Some                 // before is only the delim
     | _ -> None
-
+    
 let (|TryParseUntil|_|) token tokens = 
     let sIdx   = findTokenIdx token tokens
     match sIdx with
@@ -128,7 +134,6 @@ let parseRest openDelim styleParser tokens =
     
 
 // Link and Image Parser Helpers
-
 let (|ParseTextLink|_|) tokens = tokens |> (|TryParseWith|_|) SBracketO SBracketC
 
 let (|ParseTextImg|_|) tokens = 
@@ -138,14 +143,7 @@ let (|ParseTextImg|_|) tokens =
                  inner,
                  after)
     | _ -> None
-
-// Configuration for parseLinksOrImg which can parse either
-let linkConfig  = ((|ParseTextLink|_|),Link )
-let imageConfig = ((|ParseTextImg|_|) ,Image)
-let linkRefConfig  = ((|ParseTextLink|_|),LinkRef )
-let imageRefConfig = ((|ParseTextImg|_|) ,ImageRef)
-
-
+    
 let rec (|ParseDest|_|) tokens = 
     match tokens with
     | TryParseWithPrefix RBracketO RBracketC (inner,after)
@@ -172,4 +170,17 @@ let (|ParseRef|_|)   tokens =
                |> fun refrOpt -> (refrOpt,after) 
                |> Some
     | _ ->  None
-    
+
+
+// Configuration for Link or Image Parsers for parseLinksOrImg
+let linkConfig  = ((|ParseTextLink|_|),Link )
+let imageConfig = ((|ParseTextImg|_|) ,Image)
+
+// Configuration for Link Reference or Image Reference Parsers for parseLinksOrImgRef
+let linkRefConfig  = ((|ParseTextLink|_|),LinkRef )
+let imageRefConfig = ((|ParseTextImg|_|) ,ImageRef)
+
+
+//Configuration for Emphasis and Strong Parsers
+let strongConfig = ([(StrongOpenAst,StrongCloseAst);(StrongOpenUnd,StrongCloseUnd)],Strong)
+let empConfig    = ([(EmpOpenAst,EmpCloseAst);(EmpOpenUnd,EmpCloseUnd)],Emphasis)

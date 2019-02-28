@@ -43,8 +43,6 @@ let rec inlineTokeniser txt =
 
 
 let rec parser tokens = 
-
-
     // Converts reamaining tokens into Styled Text
     // Combine consecutive Text into a single Styled Text
     let parseText tokens =
@@ -70,33 +68,28 @@ let rec parser tokens =
         tokens |> parseText |> styledToInlineElement
 
 
-
     let rec parseCodeSpan tokens =
-        let openDelimIdx = tokens |> List.tryFindIndex (function | BacktickStr a -> true | _ -> false)
-        match openDelimIdx with 
-        | Some idx ->
-            let openDelim = tokens.[idx]
+        let openDelim = tokens |> List.tryFind (function | BacktickStr a -> true | _ -> false)
+        match openDelim with 
+        | Some delim ->
             match tokens with
-            | TryParseWith openDelim openDelim (before,inner,after)
+            | TryParseWith delim delim (before,inner,after)
                 -> before @ [inner|>toText|>CodeSpan|>Styled] @ (parseCodeSpan after)
-            | _ 
-                -> let (before,after) = tokens |> List.splitAt (idx+1)
-                   before @ (parseCodeSpan after)
+            | _ -> tokens |> parseRest delim parseCodeSpan
         | None -> tokens
 
 
-    // Image or Link parser
+    // Genenral Image or Link parser
     let rec parseLinkOrImg config tokens =
-        let makeLinkInfo text dest =  {linkText=text |> parser |> styledToInlineElement;
-                                       linkDest=dest |> toText;
-                                       linkTitle=None}
         // Build specific parser for recursive call  
         let thisParser = parseLinkOrImg config  
         let ( (|ParseText|_|) , typeConst) = config
 
         match tokens with
             | ParseText (before,text,ParseDest (dest,after))
-                ->  let linkInfo = (text,dest) ||> makeLinkInfo 
+                ->  let linkInfo = {linkText=text |> parser |> styledToInlineElement;
+                                    linkDest=dest |> toText;
+                                    linkTitle=None}
                     match after with 
                     | ParseTitle (title,after2) // Link/Image with title 
                         -> let linkTitle = title |> toText |> Some
@@ -104,11 +97,9 @@ let rec parser tokens =
                     | _                        // Link/Image without title      
                         -> before @ [linkInfo|>typeConst|>Styled] @ (thisParser after)
             | _ -> tokens |> parseRest SBracketO thisParser 
-    // Build parsers based on config        
-    let parseImage = parseLinkOrImg imageConfig
-    let parseLink  = parseLinkOrImg linkConfig
 
-    //Image Reference or Link Reference parser
+
+    //General Image Reference or Link Reference parser
     let rec parseLinkOrImgRef config tokens =
         // Build specific parser for recursive call
         let thisParser = parseLinkOrImgRef config 
@@ -122,10 +113,6 @@ let rec parser tokens =
                    -> before  @ [{refInfo with linkRef=refr}|>typeConst|>Styled] @ (thisParser after2)
                | _ -> before  @ [refInfo|>typeConst|>Styled] @ (thisParser after)
         | _ -> tokens |> parseRest SBracketO thisParser 
-
-    // Build parsers based on config
-    let parseImageRef = parseLinkOrImgRef imageRefConfig
-    let parseLinkRef  = parseLinkOrImgRef linkRefConfig
 
 
     let rec parseBreaks tokens = 
@@ -159,7 +146,7 @@ let rec parser tokens =
             match tokens with
             | TryParseWith openDelim closeDelim (before,inner,after)
                 ->  before 
-                    @ [parser inner|> styledToInlineElement |>typeConst|>Styled]
+                    @ [inner|> parser |> styledToInlineElement |>typeConst|>Styled]
                     @ (thisParser after)
             | _
                 -> tokens |> parseRest openDelim thisParser
@@ -170,11 +157,17 @@ let rec parser tokens =
         // Apply parsers sequentially
         (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
 
-    // Delimiters for Strong and Emphasis  
-    let strongConfig = ([(StrongOpenAst,StrongCloseAst);(StrongOpenUnd,StrongCloseUnd)],Strong)
-    let empConfig    = ([(EmpOpenAst,EmpCloseAst);(EmpOpenUnd,EmpCloseUnd)],Emphasis)
 
-    // Build parsers based on config
+
+    // Build Image and Link parsers based on config        
+    let parseImage = parseLinkOrImg imageConfig
+    let parseLink  = parseLinkOrImg linkConfig
+
+    // Build ImageRef and Link Ref parsers based on config
+    let parseImageRef = parseLinkOrImgRef imageRefConfig
+    let parseLinkRef  = parseLinkOrImgRef linkRefConfig
+
+    // Build Strong and Em parsers based on config
     let parseStrong   =  parseEmOrStrong strongConfig
     let parseEmphasis =  parseEmOrStrong empConfig 
 
