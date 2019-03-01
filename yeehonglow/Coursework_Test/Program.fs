@@ -98,6 +98,19 @@ let blockQuoteHandler (inputString:string):Block list=
     let removeArrow (input:string):string = input.[2..]
     separatedString |> List.map removeArrow |> String.concat "\n" |> blockParser 
 
+let blockQuoteHandlerTest (inputString:string)=
+    let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst
+    let rec checkAppend (outputList: string list) (stringList:string list): string list =  //check if next line is suppose to be appended to the prev line
+        match stringList with
+        |[] -> outputList
+        |a when a.[0].IndexOf "> " = 0 -> checkAppend a.[1..] (List.append outputList [a.[0]])
+        |a -> checkAppend a.[1..] (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]])
+    let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
+    let removeArrow (input:string):string = input.[2..]
+    separatedString //|> List.map removeArrow //|> String.concat "\n"
+
+let test1 = blockQuoteHandlerTest "> one\n> two"
+
 let listBlockHandler (inputString: string) =
     let rec checkAppend (outputList: string list) (stringList:string list) =                //appends next line if not new list element
         let rec needAppend (inputString: string):bool =                                                 //lines without labels are appended to prev line
@@ -370,4 +383,4 @@ let listBlockHandlerTest (inputString: string) =
 
     perfectList |> separateList
 
-let test1 = listBlockHandlerTest "*\n* two\nappendtolast\n   * three\n      4. four    \n5. five"
+//let test1 = listBlockHandlerTest "*\n* two\nappendtolast\n   * three\n      4. four    \n5. five"
