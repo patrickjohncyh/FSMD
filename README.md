@@ -2,7 +2,9 @@
 
 ```tableHandler : string -> Block``` 
 
-`tableHandler` takes a `string` as input from `blockDispatcher`, and outputs a `Block` type which contains necessary information on the content of each specific cell. Each cell is of type `InlineElement List` that is obtained by calling ``inlineParser``
+`tableHandler` takes a `string` as input from `blockDispatcher`, and outputs a `Block` type which contains necessary information on the content of each specific cell. Each cell is of type `InlineElement List` that is obtained by calling ``inlineParser``. 
+
+During group stage, information contained inside the table `Block` type can be used to create a DOM element in every cell that will be wrapped up together into a larger DOM element, that will be returned to `blockDispatcher`
 ```
 type Block =
     | Table of TableCells                
