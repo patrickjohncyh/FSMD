@@ -92,7 +92,7 @@ let blockQuoteHandler (inputString:string):Block list=
     let rec checkAppend (outputList: string list) (stringList:string list): string list =  //check if next line is suppose to be appended to the prev line
         match stringList with
         |[] -> outputList
-        |a when a.[0].IndexOf "> " = 0 -> checkAppend a.[1..] (List.append outputList [a.[0]])
+        |a when a.[0].IndexOf "> " = 0 -> checkAppend (List.append outputList [a.[0]]) a.[1..]
         |a -> checkAppend a.[1..] (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]])
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
@@ -103,13 +103,11 @@ let blockQuoteHandlerTest (inputString:string)=
     let rec checkAppend (outputList: string list) (stringList:string list): string list =  //check if next line is suppose to be appended to the prev line
         match stringList with
         |[] -> outputList
-        |a when a.[0].IndexOf "> " = 0 -> checkAppend a.[1..] (List.append outputList [a.[0]])
+        |a when a.[0].IndexOf "> " = 0 -> checkAppend (List.append outputList [a.[0]]) a.[1..]
         |a -> checkAppend a.[1..] (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]])
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
     separatedString //|> List.map removeArrow //|> String.concat "\n"
-
-let test1 = blockQuoteHandlerTest "> one\n> two"
 
 let listBlockHandler (inputString: string) =
     let rec checkAppend (outputList: string list) (stringList:string list) =                //appends next line if not new list element
