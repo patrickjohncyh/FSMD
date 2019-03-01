@@ -1,38 +1,7 @@
+module TableHandler
+
 open System.Text.RegularExpressions
-
-type Block =
-    | Table of TableCells    //put into generic block handler
-//  | NumberList               //List in tables might be implemented during group stage
-
-and TableCells = {
-    headerRow : InlineElement List List;
-    bodyRows : InlineElement List List List
-}
-
-and InlineElement = 
-    | Link      of LinkInfo
-    | Image     of LinkInfo
-    | CodeSpan  of InlineElement list
-    | Strong    of InlineElement list
-    | Emphasis  of InlineElement list
-    | Text      of string
-    | Hardbreak 
-    | Softbreak
-    | LinkRef   of LinkRefInfo
-    | ImageRef  of LinkRefInfo
-
-and LinkInfo = 
-    {linkText  : InlineElement list;
-     linkDest  : InlineElement list; 
-     linkTitle : InlineElement list option} 
-
-and LinkRefInfo =
-    {linkText : string
-     linkRef  : string} 
-
-type TableTokens = 
-    | NewRow   |DelimCell                   // | CssOpen    |CssClose    | Newline    | Whitespace  
-    | Cell of string
+open TableTypes
 
 let (|Regex|_|) pat txt =                                                   //detects pattern(at first char in string) and returns remaining string. Detected pattern value not stored. 
     let m = Regex.Match(txt,"^"+ pat)                                       //always checks first char onwards of string, not anywhere else 
@@ -60,7 +29,7 @@ let rec tableTokeniser tableStr =                                           //in
             match tableStr with
             | Regex "\| *\n *" remainingRawInput -> (NewRow,remainingRawInput)                                                          // To end the row "|abc", where a,c = 0 or more whitespace, b = newline 
             | Regex "\| +\-{3,} *" remainingRawInput -> (DelimCell,remainingRawInput)                                                   // To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
-            | RegexSplitCellFromTable "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)     // To match |nx where n=at least 1 space, x= any character or "\|"  . 
+            | RegexSplitCellFromTable "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)    // To match |nx where n=at least 1 space, x= any character or "\|"  . 
             | _ -> failwithf "Does not contain table format."
 
         match (tableTokeniser remainingRawInput) with
@@ -74,8 +43,6 @@ let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElem
     
     let (|FirstCellIndexOf|_|) (token:TableTokens) =                                //returns first index of the specified token 
         List.tryFindIndex (fun x -> x = token) 
-
-    let removeCellsWith (token:TableTokens) = List.filter (fun x -> x <> token)     //removes specified token from the entire list     
     
     let extractCellContent = function                                               //converts Cell to string then extracts cell data, throwing away any formatting whitespace 
         | Cell str -> 
@@ -108,7 +75,7 @@ let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElem
         match lst with
         | FirstCellIndexOf DelimCell index when (index > 0) ->
             lst.[0..(index-1)]
-            |> removeCellsWith NewRow
+            |> List.filter (fun x -> x <> NewRow) 
             |> List.map extractCellContent
             |> parseCellContent 
 
@@ -121,7 +88,7 @@ let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElem
         match lst with
         | FirstCellIndexOf DelimCell index when (index > 0) ->
             lst.[(index + 1)..]
-            |> removeCellsWith DelimCell
+            |> List.filter (fun x -> x <> DelimCell) 
             |> splitIntoRows
             |> List.map (List.map extractCellContent)
             |> List.map parseCellContent
@@ -140,6 +107,3 @@ let tableHandler str =
     let (headerList, bodyListList) =
         tableParser tokenisedTableList
     Table {headerRow = headerList ; bodyRows = bodyListList}
-
-  //Test
-tableHandler "|  Name   |    Age   |\n| --- |\n|  Tom | 23 |  \n  |   Adam | 24 |  \n"
