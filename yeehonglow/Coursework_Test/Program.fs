@@ -89,25 +89,55 @@ let codeBlockHandler (inputString:string):Block list =
 
 let blockQuoteHandler (inputString:string):Block list=
     let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst
+    let removeIndent (inputString: string) =                                                                            //strip all indents from label
+        let rec notSpaceIndex (inputString:string) (index:int) =
+            match inputString with
+            |a when a.[0] = ' ' -> notSpaceIndex a.[1..] (index + 1)
+            |_ -> index
+        let indentNum = (notSpaceIndex inputString 0)
+        inputString.[indentNum..]
+    let checkForArrow (inputString: string): bool = (inputString.IndexOf "> ") = 0
+
     let rec checkAppend (outputList: string list) (stringList:string list): string list =  //check if next line is suppose to be appended to the prev line
         match stringList with
         |[] -> outputList
         |a when a.[0].IndexOf "> " = 0 -> checkAppend (List.append outputList [a.[0]]) a.[1..]
-        |a -> checkAppend a.[1..] (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]])
+        |a when a.[0].IndexOf "> " = -1 -> checkAppend (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]]) a.[1..]
+        |a -> 
+            let indentRemoved = removeIndent a.[0]
+            if (indentRemoved.IndexOf "> " = 0) then checkAppend (List.append outputList [indentRemoved]) a.[1..]
+            else checkAppend (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]]) a.[1..]
+
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
-    separatedString |> List.map removeArrow |> String.concat "\n" |> blockParser 
+    separatedString |> List.map removeArrow |> String.concat "\n" |> blockParser
 
 let blockQuoteHandlerTest (inputString:string)=
     let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst
+    let removeIndent (inputString: string) =                                                                            //strip all indents from label
+        let rec notSpaceIndex (inputString:string) (index:int) =
+            match inputString with
+            |a when a.[0] = ' ' -> notSpaceIndex a.[1..] (index + 1)
+            |_ -> index
+        let indentNum = (notSpaceIndex inputString 0)
+        inputString.[indentNum..]
+    let checkForArrow (inputString: string): bool = (inputString.IndexOf "> ") = 0
+
     let rec checkAppend (outputList: string list) (stringList:string list): string list =  //check if next line is suppose to be appended to the prev line
         match stringList with
         |[] -> outputList
         |a when a.[0].IndexOf "> " = 0 -> checkAppend (List.append outputList [a.[0]]) a.[1..]
-        |a -> checkAppend a.[1..] (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]])
+        |a when a.[0].IndexOf "> " = -1 -> checkAppend (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]]) a.[1..]
+        |a -> 
+            let indentRemoved = removeIndent a.[0]
+            if (indentRemoved.IndexOf "> " = 0) then checkAppend (List.append outputList [indentRemoved]) a.[1..]
+            else checkAppend (List.append outputList.[0..(outputList.Length - 2)] [outputList.[outputList.Length - 1] + " " + a.[0]]) a.[1..]
+
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
-    separatedString //|> List.map removeArrow //|> String.concat "\n"
+    separatedString |> List.map removeArrow |> String.concat "\n"
+
+let test1 = blockQuoteHandlerTest "> one\n   > two\n three"
 
 let listBlockHandler (inputString: string) =
     let rec checkAppend (outputList: string list) (stringList:string list) =                //appends next line if not new list element
