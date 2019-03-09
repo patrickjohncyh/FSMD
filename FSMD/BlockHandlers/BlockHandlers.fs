@@ -6,22 +6,22 @@ open InlineParser
 open BlockParser
 
 let h1BlockHandle (inputString:string) =
-    [H1(inlineParser (inputString.[2..]))]
+    [inputString |> inlineParser |> H1]
 
 let h2BlockHandle (inputString:string) =
-    [H2(inlineParser (inputString.[3..]))]
+    [inputString |> inlineParser |> H2]
 
 let h3BlockHandle (inputString:string) =
-    [H3(inlineParser (inputString.[4..]))]
+    [inputString |> inlineParser |> H3]
 
 let h4BlockHandle (inputString:string) =
-    [H4(inlineParser (inputString.[5..]))]
+    [inputString |> inlineParser |> H4]
 
 let h5BlockHandle (inputString:string) =
-    [H5(inlineParser (inputString.[6..]))]
+    [inputString |> inlineParser |> H5]
 
 let h6BlockHandle (inputString:string) =
-    [H6(inlineParser (inputString.[7..]))]
+    [inputString |> inlineParser |> H6]
 
 let paragraphBlockHandler (inputString:string):Block list =
     let parsedString = inputString.Replace("\n", " ")

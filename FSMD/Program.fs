@@ -1,6 +1,6 @@
 // Learn more about F# at http://fsharp.org
 open System
-
+open System.IO
 open Types
 open InlineParser
 open BlockParser
@@ -12,41 +12,30 @@ open BlockHandler
 let blockDispatcher rawBlocks =
     let callBlockHandler rblock =
         match rblock.blocktype with
-        | Heading1 -> rblock.mData |> h1BlockHandle
-        | Para     -> rblock.mData |> paragraphBlockHandler
-        | _        -> []
+        | Para       -> rblock.mData |> paragraphBlockHandler
+        | Heading1   -> rblock.mData |> h1BlockHandle
+        | Heading2   -> rblock.mData |> h1BlockHandle
+        | Heading3   -> rblock.mData |> h1BlockHandle
+        | Heading4   -> rblock.mData |> h1BlockHandle
+        | Heading5   -> rblock.mData |> h1BlockHandle
+        | Heading6   -> rblock.mData |> h1BlockHandle
+        | CBlock     -> rblock.mData |> codeBlockHandler
+        | BlockQuote -> failwithf "What? Block dispatcher for BlockQuote not implemented"
+        | List       -> failwithf "What? Block dispatcher for List not implemented"
+        | TableBlock -> failwithf "What? Block dispatcher for Table not implemented"
+        | _          -> []
 
     match rawBlocks with
     | Error x -> []
     | Ok (rbList,linkRefList) ->
-        rbList |> List.map callBlockHandler
+        rbList |> List.collect callBlockHandler
 
 
 [<EntryPoint>]
 let main argv =
 
-    Some ["lol"] 
+    Some ["# lol";"";"lol"] 
     |> blockParser 
     |> blockDispatcher
     |> printfn "%A"
     0 // return an integer exit code
-
-    ///// Block record type
-    //type RawBlock = {blocktype: BlockId ; mData: string}
-
-
-    //type BlockId =
-        //| Heading6  | Heading5 | Heading4
-        //| Heading3  | Heading2 | Heading1
-        //| SetexHeading1
-        //| SetexHeading2
-        //| ThematicBreak
-        //| Para
-        //| BlockQuote 
-        //| CBlock
-        //| BlankLine
-        //| LRefDec
-        //| LRefDecB   // Beginning of link reference
-        //| LRefD of LinkRefD
-        //| List
-        //| TableBlock
