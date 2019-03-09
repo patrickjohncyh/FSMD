@@ -26,7 +26,8 @@ let (|Token2String|) token =
                         Newline, "\\n";         Exclamation,"!";    Asterisk,"*";       
                         EmpOpenAst,"*(";        EmpCloseAst,")*";   EmpOpenUnd,"_(";    
                         EmpCloseUnd,")_";       Underscore,"_";     LessThan,"<";
-                        MoreThan,">";           Backslash,"\\";
+                        MoreThan,">";           Backslash,"\\";     KatexO,"%{";
+                        KatexC,"}%";
                         StrongOpenAst ,"**(";   StrongCloseAst,")**"
                         StrongOpenUnd ,"__(";   StrongCloseUnd,")__" ] 
                        |> Map.ofList

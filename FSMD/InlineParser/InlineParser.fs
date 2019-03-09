@@ -14,6 +14,8 @@ let rec inlineTokeniser txt =
             | RegexPrefix "\\n"    remain -> (Newline,remain)
             | RegexPrefix "[\s]"   remain -> (Whitespace,remain)
             | RegexPrefix "[\\\]"  remain -> (Backslash,remain)
+            | RegexPrefix "%{"     remain -> (KatexO,remain)
+            | RegexPrefix "}%"     remain -> (KatexC,remain)
             | RegexPrefix "\*\*\(" remain -> (StrongOpenAst,remain)
             | RegexPrefix "\)\*\*" remain -> (StrongCloseAst,remain)
             | RegexPrefix "\*\("   remain -> (EmpOpenAst,remain)
@@ -157,6 +159,16 @@ let rec parser tokens =
         // Apply parsers sequentially
         (tokens,parsers) ||> List.fold (fun toks psr -> psr toks) 
 
+    let rec parseKatex tokens = 
+        match tokens with
+        | TryParseWith KatexO KatexC (before,inner,after)
+            ->  before 
+                @ [inner|> tokenList2String|>Katex|>Styled]
+                @ (parser after)
+        | _
+            -> tokens |> parseRest KatexO parseKatex
+
+
 
 
     // Build Image and Link parsers based on config        
@@ -174,6 +186,7 @@ let rec parser tokens =
 
     // Main Parsing execution
     tokens 
+    |> parseKatex
     |> parseCodeSpan
     |> parseImage
     |> parseLink

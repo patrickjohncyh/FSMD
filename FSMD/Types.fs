@@ -38,6 +38,7 @@ type InlineElement =
     | Softbreak
     | LinkRef   of LinkRefInfo
     | ImageRef  of LinkRefInfo
+    | Katex     of string
 
 and LinkInfo = 
     {linkText  : InlineElement list;
@@ -52,7 +53,7 @@ type Token =
     | SBracketO     | SBracketC      | RBracketO     | RBracketC       | QuoteMark  | Whitespace    
     | Newline       | Exclamation    | Asterisk      | EmpOpenAst      | EmpCloseAst| EmpOpenUnd | EmpCloseUnd  
     | StrongOpenAst | StrongCloseAst | StrongOpenUnd | StrongCloseUnd  | Underscore | LessThan   | MoreThan   
-    | Backslash
+    | Backslash     | KatexO         | KatexC
     | Escaped     of string
     | Literal     of string
     | BacktickStr of int
