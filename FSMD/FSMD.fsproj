@@ -5,16 +5,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types.fs" />
-    <None Include="BlockParser\markdown.txt" />
+  
+    <!-- <None Include="BlockParser\markdown.txt" /> -->
     <Compile Include="BlockParser\BlockParser.fs" />
     <Compile Include="BlockParser\BlockParserTests.fs" />
+    
     <Compile Include="InlineParser\InlineParserHelpers.fs" />
     <Compile Include="InlineParser\InlineParser.fs" />
     <Compile Include="InlineParser\InlineParserTest.fs" />
+        
     <Compile Include="BlockHandlers\TableHandler.fs" />
     <Compile Include="BlockHandlers\BlockHandlers.fs" />
     <Compile Include="BlockHandlers\TableHandlerTest.fs" />
     <Compile Include="BlockHandlers\BlockHandlerTest.fs" />
+        
+    <Compile Include="BlockParser\BlockDispatcher.fs" />    
+        
     <Compile Include="Program.fs" />
     <PackageReference Include="Expecto.FsCheck" Version="8.9.1" />
   </ItemGroup>

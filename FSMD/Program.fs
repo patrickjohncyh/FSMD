@@ -5,37 +5,33 @@ open Types
 open InlineParser
 open BlockParser
 open TableHandler
-open BlockHandler
+open BlockHandlers
+open BlockDispatcher
 
+let fileStream (fPath:string) =
+    try
+        File.ReadAllLines(fPath) |> Ok
+    with
+    | :? System.ArgumentException           -> Error <| sprintf "Path is a zero-length string"
+    | :? System.UnauthorizedAccessException -> Error <| sprintf "Non authorized access to file"
+    | :? System.IO.FileNotFoundException    -> Error <| sprintf "Could not find the file %A" fPath
 
+/// markdown test file
+let testFilePath = @"markdown.txt"
 
-let blockDispatcher rawBlocks =
-    let callBlockHandler rblock =
-        match rblock.blocktype with
-        | Para       -> rblock.mData |> paragraphBlockHandler
-        | Heading1   -> rblock.mData |> h1BlockHandle
-        | Heading2   -> rblock.mData |> h1BlockHandle
-        | Heading3   -> rblock.mData |> h1BlockHandle
-        | Heading4   -> rblock.mData |> h1BlockHandle
-        | Heading5   -> rblock.mData |> h1BlockHandle
-        | Heading6   -> rblock.mData |> h1BlockHandle
-        | CBlock     -> rblock.mData |> codeBlockHandler
-        | BlockQuote -> failwithf "What? Block dispatcher for BlockQuote not implemented"
-        | List       -> failwithf "What? Block dispatcher for List not implemented"
-        | TableBlock -> failwithf "What? Block dispatcher for Table not implemented"
-        | _          -> []
-
-    match rawBlocks with
-    | Error x -> []
-    | Ok (rbList,linkRefList) ->
-        rbList |> List.collect callBlockHandler
-
-
+/// convert string array into list array
+let linesList = fileStream testFilePath
+               |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
+               
 [<EntryPoint>]
 let main argv =
 
-    Some ["# lol";"";"lol"] 
-    |> blockParser 
+    let lines = testFilePath
+                |> fileStream
+                |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
+    lines
+    |> blockParser
     |> blockDispatcher
     |> printfn "%A"
+  
     0 // return an integer exit code

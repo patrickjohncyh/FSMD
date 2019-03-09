@@ -4,6 +4,7 @@ open Types
 open System
 open System.IO
 open System.Text.RegularExpressions
+
 /// do regex on a line of string, return a tuple of (1st match, the rest of the string)
 /// only when it's at the beginning of the string 
 let (|RegexPat|_|) pat txt =
@@ -33,6 +34,7 @@ let (|LRefURLId|LRefURLInv|) str =
     match str with
     | RegexPat "\s*[a-zA-Z0-9./]+" lURL -> LRefURLId lURL
     | _                                 -> LRefURLInv
+
 ///Check whethere a title is valid, there is no title, or title is invalid
 let (|LRefTitleId|LRefNoTitle|LRefInvalidT|) str =
     match str with
@@ -52,7 +54,7 @@ let lRefHandler lblock =
       when bt=LRefDec  -> 
       match mD with
       | LRefTextId lTxt' -> match (snd lTxt') with
-                            | LRefURLId lURL' -> let charToTrim=[|' '; '\n';''';'\"'|]
+                            | LRefURLId lURL' -> let charToTrim=[|' '; '\n';''';char(34)|]
                                                  match (snd lURL') with
                                                  | LRefTitleId lTl' -> Ok (LRefD {lText=(fst lTxt').Trim(charToTrim);
                                                                        lURL=(fst lURL').Trim(charToTrim);
@@ -64,6 +66,7 @@ let lRefHandler lblock =
                             | LRefURLInv      -> Error <|sprintf "invalid URL"
       | _                -> Error <|sprintf "invalid text"
     | _                 -> Error <|sprintf "not lref block"
+
 /// take in a line of string, do regex, and outputs a tuple of (BlockId*string)
 let (|BlockIdentifier|) str :(BlockId*string) =
     match str with
@@ -182,33 +185,3 @@ let blockParser stringList =
     | Some sList when sList.IsEmpty -> Error <| sprintf "Parsing failed, initial input string list is empty"
     | None -> Error <| sprintf "Parsing failed, no input list is given"
 
-//===============================================================================================================
-//                                    Main Execution of blockParser
-//===============================================================================================================
- 
-/// given a path with markdown file inside, read line by line and store in an array
-let fileStream (fPath:string) =
-    try
-        File.ReadAllLines(fPath) |> Ok
-    with
-    | :? System.ArgumentException           -> Error <| sprintf "Path is a zero-length string"
-    | :? System.UnauthorizedAccessException -> Error <| sprintf "Non authorized access to file"
-    | :? System.IO.FileNotFoundException    -> Error <| sprintf "Could not find the file %A" fPath
-
-/// markdown test file
-let testFilePath = @"markdown.txt"
-
-/// convert string array into list array
-let linesList = fileStream testFilePath
-               |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
-
-/// RawBlock list to be sent to Block Dispatcher          
-let a =
-    match (blockParser linesList) with
-        | Ok res  -> (fst res)
-        | Error e -> []
-/// LinkRefD list to be sent to Block Dispatcher          
-let b =
-    match (blockParser linesList) with
-        | Ok res  -> (snd res)
-        | Error e -> []

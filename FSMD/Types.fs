@@ -72,7 +72,8 @@ type Block =
     | H5 of InlineElement list
     | H6 of InlineElement list
     | ListBlock of ListStructure list * string
-    | CodeBlock of string
+    | CodeBlock of InlineElement list
+    | QuoteBlock of Block list
     | Table of TableCells                   
     | TempBlock                 // TempBlock for testing
 

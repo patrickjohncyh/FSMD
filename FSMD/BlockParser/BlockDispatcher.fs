@@ -1,32 +1,25 @@
 module BlockDispatcher
 
 open Types
-open BlockParser
-open BlockParserTests
+open BlockHandlers
 
-// Future integration needed with corresponding blockhandler
-(*
-let blockDispatcher (groupedBlocks: Result<(RawBlock list*RawBlock list),string>) = 
-    ///calling blockHandlers written by other group members
-    ///input is string, output is Block list
-    let genericBlockHandler (inputRawBlk:RawBlock) : Block list =
-        match inputRawBlk with
-        | rB when rB.blocktype=List       -> listBlockHandler rB.mData
-        | rB when rB.blocktype=Table      -> tableBlockHandler rB.mData
-        | rB when rB.blocktype=Paragraph  -> paragraphBlockHandler rB.mData
-        | rB when rB.blocktype=BlockQuote -> blockQuoteBlockHandler rB.mData
-        | rB when rB.blocktype=CodeBlock  -> codeBlockBlockHandler rB.mData
-        | rB when rB.blocktype=Heading1   -> heading1BlockHandler rB.mData
-        | rB when rB.blocktype=Heading2   -> heading2BlockHandler rB.mData
-        | rB when rB.blocktype=Heading3   -> heading3BlockHandler rB.mData
-        | rB when rB.blocktype=Heading4   -> heading4BlockHandler rB.mData
-        | rB when rB.blocktype=Heading5   -> heading5BlockHandler rB.mData
-        | rB when rB.blocktype=Heading6   -> heading6BlockHandler rB.mData
-    
-    let makeBlock (rawBlockList: RawBlock list) =
-        rawBlockList
-        |> List.fold (fun stateBlk curBlock -> genericBlockHandler curBlock) []
+let rec blockDispatcher rawBlocks =
+    let callBlockHandler rblock =
+        match rblock.blocktype with
+        | Para       -> rblock.mData |> paragraphBlockHandler
+        | Heading1   -> rblock.mData |> h1BlockHandle
+        | Heading2   -> rblock.mData |> h2BlockHandle
+        | Heading3   -> rblock.mData |> h3BlockHandle
+        | Heading4   -> rblock.mData |> h4BlockHandle
+        | Heading5   -> rblock.mData |> h5BlockHandle
+        | Heading6   -> rblock.mData |> h6BlockHandle
+        | CBlock     -> rblock.mData |> codeBlockHandler
+        | BlockQuote -> rblock.mData |> blockQuoteHandler blockDispatcher
+        | List       -> failwithf "What? Block dispatcher for List not implemented"
+        | TableBlock -> failwithf "What? Block dispatcher for Table not implemented"
+        | _          -> []
 
-    Result.map (fun x -> (fst x)) groupedBlocks
-    |> Result.map makeBlock
-*)
+    match rawBlocks with
+    | Error x -> []
+    | Ok (rbList,linkRefList) ->
+        rbList |> List.collect callBlockHandler
