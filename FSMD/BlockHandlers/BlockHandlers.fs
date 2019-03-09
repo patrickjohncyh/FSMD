@@ -1,35 +1,38 @@
-﻿module BlockHandler
+module BlockHandler
 
 open System.Text.RegularExpressions
 open Types
+open InlineParser
+open BlockParser
 
 let h1BlockHandle (inputString:string) =
-    [H1(inLineParser (inputString.[2..]))]
+    [H1(inlineParser (inputString.[2..]))]
 
 let h2BlockHandle (inputString:string) =
-    [H2(inLineParser (inputString.[3..]))]
+    [H2(inlineParser (inputString.[3..]))]
 
 let h3BlockHandle (inputString:string) =
-    [H3(inLineParser (inputString.[4..]))]
+    [H3(inlineParser (inputString.[4..]))]
 
 let h4BlockHandle (inputString:string) =
-    [H4(inLineParser (inputString.[5..]))]
+    [H4(inlineParser (inputString.[5..]))]
 
 let h5BlockHandle (inputString:string) =
-    [H5(inLineParser (inputString.[6..]))]
+    [H5(inlineParser (inputString.[6..]))]
 
 let h6BlockHandle (inputString:string) =
-    [H6(inLineParser (inputString.[7..]))]
+    [H6(inlineParser (inputString.[7..]))]
 
 let paragraphBlockHandler (inputString:string):Block list =
     let parsedString = inputString.Replace("\n", " ")
-    [Paragraph(inLineParser parsedString)]
+    [Paragraph(inlineParser parsedString)]
 
 let codeBlockHandler (inputString:string):Block list =
     let separatedString = inputString.Split "\n" |> Array.toList
     let removeIndent (input:string):string = input.[4..]
-    separatedString |> List.map removeIndent |> String.concat "\n" |> blockParser
+    [CodeBlock(inputString)]
 
+(*
 let blockQuoteHandler (inputString:string):Block list=
     let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst
     let removeIndent (inputString: string) =                                                                            //strip all indents from label
@@ -53,7 +56,9 @@ let blockQuoteHandler (inputString:string):Block list=
 
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
-    separatedString |> List.map removeArrow |> String.concat "\n" |> blockParser
+    separatedString |> List.map removeArrow |> String.concat "\n" |> Some |> blockParser
+
+
 
 let blockQuoteHandlerTest (inputString:string)=
     let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst
@@ -221,11 +226,11 @@ let listBlockHandler (inputString: string) =
         match tupleList with 
         |[] -> output
         |a when equalZero (fst a.[0]) -> 
-            let newOutput = List.append output [ListLines(a.[0] |> snd |> snd |> blockParser)]
+            let newOutput = List.append output [ListLines(a.[0] |> snd |> snd |> Some |> blockParser)]
             listToDOMElement newOutput a.[1..]
         |a -> 
             let list1 = fst (reduceZero [] a)
-            let newOutput = List.append output [InnerList(list1 |> getMarkDown |> blockParser)]
+            let newOutput = List.append output [InnerList(list1 |> getMarkDown |> Some |> blockParser)]
             let newTupleList = snd (reduceZero [] a)
             listToDOMElement newOutput newTupleList 
 
@@ -351,3 +356,4 @@ let listBlockHandlerTest (inputString: string) =
         listGroups |> List.map (finalSeparate perfectList)
 
     perfectList |> separateList
+    *)

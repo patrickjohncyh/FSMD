@@ -7,15 +7,15 @@ type BlockId =
     | SetexHeading1
     | SetexHeading2
     | ThematicBreak
-    | Paragraph
+    | Para
     | BlockQuote 
-    | CodeBlock
+    | CBlock
     | BlankLine
     | LRefDec
     | LRefDecB   // Beginning of link reference
     | LRefD of LinkRefD
     | List
-    | Table
+    | TableBlock
 
 /// Record type to store link reference declarations
 and LinkRefD = {lText: string ; lURL: string ; lTitle : string option}
@@ -72,7 +72,7 @@ type Block =
     | H5 of InlineElement list
     | H6 of InlineElement list
     | ListBlock of ListStructure list * string
-    | CodeBlock of Block
+    | CodeBlock of string
     | Table of TableCells                   
     | TempBlock                 // TempBlock for testing
 

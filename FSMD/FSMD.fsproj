@@ -1,13 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
-    <Compile Include="Program.fs" />
     <Compile Include="Types.fs" />
+    <None Include="BlockParser\markdown.txt" />
+    <Compile Include="BlockParser\BlockParser.fs" />
+    <Compile Include="BlockParser\BlockParserTests.fs" />
+    <Compile Include="InlineParser\InlineParserHelpers.fs" />
+    <Compile Include="InlineParser\InlineParser.fs" />
+    <Compile Include="InlineParser\InlineParserTest.fs" />
+    <Compile Include="BlockHandlers\TableHandler.fs" />
+    <Compile Include="BlockHandlers\BlockHandlers.fs" />
+    <Compile Include="BlockHandlers\TableHandlerTest.fs" />
+    <Compile Include="BlockHandlers\BlockHandlerTest.fs" />
+    <Compile Include="Program.fs" />
+    <PackageReference Include="Expecto.FsCheck" Version="8.9.1" />
   </ItemGroup>
-
 </Project>

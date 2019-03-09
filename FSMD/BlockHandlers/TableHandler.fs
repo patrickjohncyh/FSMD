@@ -2,6 +2,7 @@ module TableHandler
 
 open System.Text.RegularExpressions
 open Types
+open InlineParser
 
 let (|Regex|_|) pat txt =                                                   //detects pattern(at first char in string) and returns remaining string. Detected pattern value not stored. 
     let m = Regex.Match(txt,"^"+ pat)                                       //always checks first char onwards of string, not anywhere else 
@@ -35,9 +36,6 @@ let rec tableTokeniser tableStr =                                           //in
         match (tableTokeniser remainingRawInput) with
         | [] -> [matchedToken]
         | tokenList -> matchedToken :: tokenList
-
-let inlineParser (inputString : string) : InlineElement List =                      //stub test function. Written by another teammate.
-    [Text inputString] 
 
 let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElement List List List) = 
     

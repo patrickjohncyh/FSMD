@@ -188,7 +188,7 @@ let blockIdentifierTest6 =
 let blockIdentifierTest7 =
     testCase "More than 6# is observed, get parsed as a paragraph" <| fun() ->
     let input = "####### This is the content"
-    let expected = (Paragraph,input)
+    let expected = (Para,input)
     Expect.equal(match input with
                  |BlockIdentifier result -> result) expected "function should succeed"  
 [<Tests>]
@@ -237,7 +237,7 @@ let blockIdentifierTest13 =
 let blockIdentifierTest14 =
     testCase "A line of codeblock is observed" <| fun() ->
     let input = "    This is parsed as codeblock"
-    let expected = (CodeBlock,"This is parsed as codeblock")
+    let expected = (CBlock,"This is parsed as codeblock")
     Expect.equal(match input with
                  |BlockIdentifier result -> result) expected "function should succeed"   
 [<Tests>]
@@ -265,14 +265,14 @@ let blockIdentifierTest17 =
 let blockIdentifierTest18 =
     testCase "A line of Table is observed" <| fun() ->
     let input = "| Name | Age | Sex |"
-    let expected = (Table,input)
+    let expected = (TableBlock,input)
     Expect.equal(match input with
                  |BlockIdentifier result -> result) expected "function should succeed"
 [<Tests>]
 let blockIdentifierTest19 =
     testCase "A line of Table is observed, first column at least 3 \"-\"" <| fun() ->
     let input = "| --- | ---- | ----- |"
-    let expected = (Table,input)
+    let expected = (TableBlock,input)
     Expect.equal(match input with
                  |BlockIdentifier result -> result) expected "function should succeed"
 
@@ -304,9 +304,9 @@ let blockParserTest=
      "| And  | 30   |"; "";
      "Blanklines are going to be removed by this block parser"; "";
      "\# the heading will be esaped as I'm using the escape thing"])
-    let expected =  Ok([{blocktype = Paragraph;
+    let expected =  Ok([{blocktype = Para;
        mData = "[f3]:
-heheheh '";}; {blocktype = Paragraph;
+heheheh '";}; {blocktype = Para;
                                      mData = "invalied url'
 [fooo] [f2]";};
       {blocktype = BlockQuote;
@@ -314,11 +314,11 @@ heheheh '";}; {blocktype = Paragraph;
 continuation it should be";};
       {blocktype = Heading1;
        mData = "This is heading 1";};
-      {blocktype = CodeBlock;
+      {blocktype = CBlock;
        mData = "This is a codeblock
 as it is indented 4 space";};
       {blocktype = ThematicBreak;
-       mData = "*** ***";}; {blocktype = Paragraph;
+       mData = "*** ***";}; {blocktype = Para;
                              mData = "I just put a thematic break up there";};
       {blocktype = List;
        mData =
@@ -330,15 +330,15 @@ as it is indented 4 space";};
        mData =
         "This text right here will
 be a setex heading as I put = below";};
-      {blocktype = Paragraph;
+      {blocktype = Para;
        mData = "This will be a table";};
-      {blocktype = Table;
+      {blocktype = TableBlock;
        mData = "| Name | Age  |
 | ---  | ---  |
 | And  | 30   |";};
-      {blocktype = Paragraph;
+      {blocktype = Para;
        mData = "Blanklines are going to be removed by this block parser";};
-      {blocktype = Paragraph;
+      {blocktype = Para;
        mData = "# the heading will be esaped as I'm using the escape thing";}],
      [{lText = "fooo";
        lURL = "ulalalalal";
