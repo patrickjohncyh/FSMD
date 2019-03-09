@@ -3,7 +3,7 @@
 //===============================================================================================
 module BlockParserTests
 
-open BlockParserTypes
+open Types
 open BlockParser
 open FsCheck
 open Expecto

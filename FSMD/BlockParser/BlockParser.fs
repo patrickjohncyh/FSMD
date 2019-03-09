@@ -1,30 +1,9 @@
+module BlockParser
+
+open Types
 open System
 open System.IO
 open System.Text.RegularExpressions
-/// DUs of block identifiers/block tokens
-type BlockId =
-    | Heading6 
-    | Heading5
-    | Heading4
-    | Heading3
-    | Heading2
-    | Heading1
-    | SetexHeading1
-    | SetexHeading2
-    | Paragraph
-    | BlockQuote 
-    | List
-    | CodeBlock
-    | ThematicBreak
-    | BlankLine
-    | LRefDec
-    | LRefDecB   // Beginning of link reference
-    | LRefD of LinkRefD
-    | Table
-/// Record type to store link reference declarations
-and LinkRefD = {lText: string ; lURL: string ; lTitle : string option}
-/// Block record type
-type RawBlock = {blocktype: BlockId ; mData: string}
 /// do regex on a line of string, return a tuple of (1st match, the rest of the string)
 /// only when it's at the beginning of the string 
 let (|RegexPat|_|) pat txt =
@@ -35,8 +14,6 @@ let (|RegexPat|_|) pat txt =
                  | capString when (capString + txt.Substring(capString.Length) = txt) ->  (m.Value, txt.Substring(m.Value.Length)) |> Some
                  | _ -> None
     | false -> None
-
-/// take in a line of string, do regex, and outputs a tuple of (BlockId*string)
 
 ///Strips away the first '[' and the last ']:' from a link reference definition, returns a string of link ref content
 let (|LRefTextId|_|) aLine =
@@ -86,10 +63,6 @@ let lRefHandler lblock =
                             | LRefURLInv      -> Error <|sprintf "invalid URL"
       | _                -> Error <|sprintf "invalid text"
     | _                 -> Error <|sprintf "not lref block"
-let blockTest = {blocktype=LRefDec;
-   mData=
-"[fooo]:/url\"title1\""}
-lRefHandler blockTest |> function | Ok (LRefD l) -> l.lURL | Error e -> e
 /// take in a line of string, do regex, and outputs a tuple of (BlockId*string)
 let (|BlockIdentifier|) str =
     match str with
@@ -114,7 +87,7 @@ let (|BlockIdentifier|) str =
     | RegexPat "\s{0,3}\*\s+" line                   -> (List,str)
     | RegexPat "(\|\s---|\| )" line                  -> (Table,str) // the number of whitespace doesn't matter
     | RegexPat @"\\"          line                   -> match (snd line) with
-                                                        | ""   -> (Paragraph, @"\\")
+                                                        | ""   -> (Paragraph, "\\")
                                                         | rest -> (Paragraph, rest) // \ is escape character, the rest parsed as paragraph
     | _                                              -> (Paragraph, str) // else, parse the entire line as paragraph
 
@@ -166,7 +139,7 @@ let blockParser stringList =
                          groupBlocks' ungroupBlocksLst [] |> List.rev // reverse the list
                      
                     ///check linkrefdec block, if valid, output LREF block, else a paragraph
-                    let checkLinkRefDecBlock block =
+                    let checkLinkRefDecBlock (block: RawBlock) =
                         match lRefHandler block with
                         | Ok bRes                -> {blocktype=bRes; mData=""}
                         | Error "Invalid title"  -> {blocktype=Paragraph; mData=block.mData} //invalid title,becomes a paragraph block
@@ -226,34 +199,13 @@ let testFilePath = @"markdown.txt"
 let linesList = fileStream testFilePath
                |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
 
-blockParser linesList
+/// RawBlock list to be sent to Block Dispatcher          
 let a =
     match (blockParser linesList) with
         | Ok res  -> (fst res)
         | Error e -> []
-
-(*
-let blockDispatcher (groupedBlocks: Result<(RawBlock list*RawBlock list),string>) = 
-    ///calling blockHandlers written by other group members
-    ///input is string, output is Block list
-    let genericBlockHandler (inputRawBlk:RawBlock) : Block list =
-        match inputRawBlk with
-        | rB when rB.blocktype=List       -> listBlockHandler rB.mData
-        | rB when rB.blocktype=Table      -> tableBlockHandler rB.mData
-        | rB when rB.blocktype=Paragraph  -> paragraphBlockHandler rB.mData
-        | rB when rB.blocktype=BlockQuote -> blockQuoteBlockHandler rB.mData
-        | rB when rB.blocktype=CodeBlock  -> codeBlockBlockHandler rB.mData
-        | rB when rB.blocktype=Heading1   -> heading1BlockHandler rB.mData
-        | rB when rB.blocktype=Heading2   -> heading2BlockHandler rB.mData
-        | rB when rB.blocktype=Heading3   -> heading3BlockHandler rB.mData
-        | rB when rB.blocktype=Heading4   -> heading4BlockHandler rB.mData
-        | rB when rB.blocktype=Heading5   -> heading5BlockHandler rB.mData
-        | rB when rB.blocktype=Heading6   -> heading6BlockHandler rB.mData
-    
-    let makeBlock (rawBlockList: RawBlock list) =
-        rawBlockList
-        |> List.fold (fun stateBlk curBlock -> genericBlockHandler curBlock) []
-
-    Result.map (fun x -> (fst x)) groupedBlocks
-    |> Result.map makeBlock
-*)
+/// LinkRefD list to be sent to Block Dispatcher          
+let b =
+    match (blockParser linesList) with
+        | Ok res  -> (snd res)
+        | Error e -> []

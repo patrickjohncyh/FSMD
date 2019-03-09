@@ -4,7 +4,7 @@ open System
 open Expecto
 open FsCheck
 
-open InlineTypes
+open Types
 open InlineParserHelpers
 open InlineParser
 

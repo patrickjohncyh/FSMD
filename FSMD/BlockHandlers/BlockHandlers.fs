@@ -1,64 +1,7 @@
-﻿module GenericBlockHandler
+﻿module BlockHandler
 
-type Token = 
-    | SBracketO
-    | SBracketC
-    | RBracketO
-    | RBracketC
-    | QuoteMark
-    | Whitespace
-    | Asterisk
-    | EmpOpen
-    | EmpClose
-    | StrongOpen
-    | StrongClose
-    | Underscore
-    | Escaped of string
-    | Text    of string
-    | BacktickStr of int
-    | Styled  of InlineElement
-
-and InlineElement = 
-    | Link of LinkInfo
-    | Plain of Token list
-    | CodeSpan  of Token list
-    | Strong of Token list
-    | Emphasis of Token list
-    | TempInline //temp inLine for testing
-
-and LinkInfo = {linkText:Token list;
-                linkDest: Token list; 
-                linkTitle : Token list option}                
-
-type Block =
-    |Paragraph of InlineElement list
-    |H1 of InlineElement list
-    |H2 of InlineElement list
-    |H3 of InlineElement list
-    |H4 of InlineElement list
-    |H5 of InlineElement list
-    |H6 of InlineElement list
-    |ListBlock of ListStructure list * string
-    |CodeBlock of Block
-    |TempBlock  //tempBlock for testing
-
-and ListStructure =
-    |InnerList of Block list //need header
-    |ListLines of Block list
-    |TempStruct //tempStruct for testing
-
-type ListType =
-    |StarList
-    |DotList
-    |BracketList
-    |MinusList
-    |PlusList
-
-let inLineParser (a:string): InlineElement list =
-    [TempInline]
-
-let blockParser (a:string): Block list=
-    [TempBlock]
+open System.Text.RegularExpressions
+open Types
 
 let h1BlockHandle (inputString:string) =
     [H1(inLineParser (inputString.[2..]))]
@@ -136,8 +79,6 @@ let blockQuoteHandlerTest (inputString:string)=
     let separatedString = inputString.Split "\n" |> Array.toList |> checkAppend []
     let removeArrow (input:string):string = input.[2..]
     separatedString |> List.map removeArrow |> String.concat "\n"
-
-let test1 = blockQuoteHandlerTest "> one\n   > two\n three"
 
 let listBlockHandler (inputString: string) =
     let rec checkAppend (outputList: string list) (stringList:string list) =                //appends next line if not new list element
@@ -410,5 +351,3 @@ let listBlockHandlerTest (inputString: string) =
         listGroups |> List.map (finalSeparate perfectList)
 
     perfectList |> separateList
-
-//let test1 = listBlockHandlerTest "*\n* two\nappendtolast\n   * three\n      4. four    \n5. five"

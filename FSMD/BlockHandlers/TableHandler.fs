@@ -1,7 +1,7 @@
 module TableHandler
 
 open System.Text.RegularExpressions
-open TableTypes
+open Types
 
 let (|Regex|_|) pat txt =                                                   //detects pattern(at first char in string) and returns remaining string. Detected pattern value not stored. 
     let m = Regex.Match(txt,"^"+ pat)                                       //always checks first char onwards of string, not anywhere else 

@@ -1,6 +1,6 @@
 module TableHandlerTest
 
-open TableTypes
+open Types
 open TableHandler
 
 open Expecto

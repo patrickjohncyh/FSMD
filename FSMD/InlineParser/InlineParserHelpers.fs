@@ -2,7 +2,7 @@ module InlineParserHelpers
 
 
 open System.Text.RegularExpressions
-open InlineTypes
+open Types
 
 
 // Tokenizer helpers

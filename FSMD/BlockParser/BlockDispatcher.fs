@@ -1,6 +1,6 @@
 module BlockDispatcher
 
-open BlockParserTypes
+open Types
 open BlockParser
 open BlockParserTests
 

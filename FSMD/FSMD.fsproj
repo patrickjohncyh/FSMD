@@ -7,10 +7,7 @@
 
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <Compile Include="BlockHandlerTest.fs" />
+    <Compile Include="Types.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Expecto" Version="8.9.1" />
-  </ItemGroup>
 </Project>

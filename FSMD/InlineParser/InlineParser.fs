@@ -1,6 +1,6 @@
 module InlineParser
 
-open InlineTypes
+open Types
 open InlineParserHelpers
 
 let rec inlineTokeniser txt = 
