@@ -557,16 +557,16 @@ let runCode breakCondition () =
 
 let resetEmulator() =
     printfn "Resetting..."
-    Tooltips.deleteAllContentWidgets()
-    Editors.removeEditorDecorations currentFileTabId
+    //Tooltips.deleteAllContentWidgets()
+    //Editors.removeEditorDecorations currentFileTabId
     Editors.enableEditors()
-    memoryMap <- Map.empty
-    symbolMap <- Map.empty
-    regMap <- initialRegMap
-    setMode ResetMode
-    updateMemory()
-    updateSymTable()
-    resetRegs()
-    resetFlags()
-    updateRegisters()
-    updateClockTime (0uL, 0uL)
+    //memoryMap <- Map.empty
+    //symbolMap <- Map.empty
+    //regMap <- initialRegMap
+    //setMode ResetMode
+    //updateMemory()
+    //updateSymTable()
+    //resetRegs()
+    //resetFlags()
+    //updateRegisters()
+    //updateClockTime (0uL, 0uL)
