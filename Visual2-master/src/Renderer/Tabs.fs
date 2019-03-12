@@ -8,6 +8,7 @@
 /// implement Monaco editor file tabs
 
 module Tabs
+
 open Fable.Core.JsInterop
 open Fable.Import
 open Fable.Import.Browser
@@ -17,6 +18,7 @@ open CommonData
 open Refs
 open Editors
 
+(*
 /// Get flag as stored and displayed in GUI
 let getFlag (id : string) =
     let el = Refs.flag id
@@ -83,6 +85,7 @@ let setMode (rm : ExecutionTop.RunMode) =
     | ExecutionTop.FinishedMode _ -> setExecutionCompleteStatus()
     setRunButton rm
     Refs.runMode <- rm
+*)
 
 let getSettingsTabId() =
     match Refs.settingsTab with
@@ -154,7 +157,7 @@ let deleteFileTab id =
                    | true -> -1
                    | false -> List.last Refs.fileTabList
         | _ -> ()
-        Tooltips.deleteAllContentWidgets()
+        //Tooltips.deleteAllContentWidgets()
         Refs.fileTabMenu.removeChild (Refs.fileTab id) |> ignore
         Refs.fileViewPane.removeChild (Refs.fileView id) |> ignore
         match isSettingsTab with

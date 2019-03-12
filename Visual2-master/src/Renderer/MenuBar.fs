@@ -45,6 +45,7 @@ let interlock (actionName : string) (action : Unit -> Unit) = (
         | ExecutionTop.ParseErrorMode -> action() :> obj
         | _ -> showVexConfirm (sprintf "Can't %s while simulator is running <br> <br>Reset and %s<br>" actionName actionName) actIfConfirmed :> obj
     )
+   
  /// Wrap an action so that it can only happen if simulator is stopped.
  /// Operates on (Unit->Unit) to make (Unit->Unit).
  /// Suitable for use as action in menu.
@@ -139,7 +140,7 @@ let openFile() =
 
 
 
-
+(*
 let loadDemo() =
     Tabs.createFileTab()
     |> fun tId ->
@@ -149,7 +150,7 @@ let loadDemo() =
                                               loadFileIntoTab tId data
         ))
         Tabs.setTabSaved tId
-
+*)
 
 
 let showQuitMessage (callBack : bool -> unit) =
@@ -318,12 +319,13 @@ let testMenu() =
 let helpMenu() =
         makeMenu "Help" (
             [
+                (*
                 makeItem "UAL instruction guide" Core.Option.None (runExtPage <| visualDocsPage "guide#content")
                 makeItem "VisUAL2 web pages" Core.Option.None (runExtPage <| visualDocsPage "")
                 makeItem "Testbenches" Core.Option.None (runExtPage <| visualDocsPage "testbench")
                 makeItem "Official ARM documentation" Core.Option.None (runExtPage "http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0234b/i1010871.html")
                 menuSeparator
-                makeItem "Load complex demo code" Core.Option.None (interlockAction "load code" loadDemo)
+                //makeItem "Load complex demo code" Core.Option.None (interlockAction "load code" loadDemo)
                 makeCondItem (debugLevel > 0) "Run dev tools FABLE checks" Core.Option.None (interlockAction "FABLE checks" Integration.runTestbench)
                 makeCondItem (debugLevel > 0) "Run Emulator Tests" Core.Option.None (interlockAction "run tests" Tests.runAllEmulatorTests)
                 menuSeparator
@@ -333,6 +335,7 @@ let helpMenu() =
                                 "(c) 2018, Imperial College <br> Acknowledgements: Salman Arif (VisUAL), HLP 2018 class" +
                                 " (F# reimplementation), with special mention to Thomas Carrotti," +
                                 " Lorenzo Silvestri, and HLP Team 10"))
+                                *)
             ])
 
 

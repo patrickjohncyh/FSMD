@@ -7,7 +7,7 @@
 *)
 
 module Testbench
-
+(*
 open Fable.Core.JsInterop
 open Refs
 open EEExtensions
@@ -107,3 +107,4 @@ let getTestList() =
         | Error e -> showVexAlert e; []
         | Ok(_, tests) ->
             tests
+*)

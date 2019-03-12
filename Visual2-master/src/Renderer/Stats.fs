@@ -148,6 +148,7 @@ let remindNewVersion txt =
 
 let mutable lastRemindTime: System.TimeSpan option = None
 
+
 let remindInExams txt =
     printfn "Remind in exams every 5 min!"
     let remind() = 
@@ -167,7 +168,7 @@ let remindInExams txt =
                 | true, Some tt when tt.Add (TimeSpan.FromMinutes 5.) < tim.TimeOfDay -> remind()                            
                 | _ -> ()
             | _ -> ()
-        )
+        )      
 
 
 let doIfHoursLaterThan hours (tim:System.DateTime) func =

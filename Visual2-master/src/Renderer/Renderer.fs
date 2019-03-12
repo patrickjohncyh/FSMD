@@ -136,7 +136,7 @@ let init() =
     vSettings <- checkSettings (getJSONSettings())
     Editors.updateAllEditors false
 
-    Tooltips.addFixedToolTips()
+    //Tooltips.addFixedToolTips()
 
     Stats.readOnlineInfo Stats.Startup
 

@@ -7,7 +7,7 @@
 
 /// integrate emulator code with renderer
 module Integration
-
+(*
 open EEExtensions
 open Tabs
 open Views
@@ -553,3 +553,20 @@ let runCode breakCondition () =
                 | 0L -> System.Int64.MaxValue
                 | n when n > 0L -> n
                 | _ -> System.Int64.MaxValue
+*)
+
+let resetEmulator() =
+    printfn "Resetting..."
+    Tooltips.deleteAllContentWidgets()
+    Editors.removeEditorDecorations currentFileTabId
+    Editors.enableEditors()
+    memoryMap <- Map.empty
+    symbolMap <- Map.empty
+    regMap <- initialRegMap
+    setMode ResetMode
+    updateMemory()
+    updateSymTable()
+    resetRegs()
+    resetFlags()
+    updateRegisters()
+    updateClockTime (0uL, 0uL)

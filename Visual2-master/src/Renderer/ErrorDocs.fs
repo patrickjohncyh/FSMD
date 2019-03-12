@@ -5,7 +5,7 @@
     Description: create markdown for assembler hover message hints
 *)
 module ErrorDocs
-
+(*
 open EEExtensions
 open Refs
 open Fable.PowerPack
@@ -203,5 +203,5 @@ let getOpcHover mess opc line =
 
 
 
-
+*)
     

@@ -7,7 +7,7 @@
 
 /// F# References to static parts of renderer DOM
 module Tooltips
-
+(*
 open Fable.Import
 open Fable.Import.Browser
 open Fable.Core.JsInterop
@@ -119,7 +119,8 @@ let inline tspan b c = svgEl "tspan" b c
 // svgEl "g" [attribute list] [react element list]
 //
 //---------------------------------------------------------------------------------------------------------------------------
-
+*)
+(*
 open Fable.Helpers.React
 open Fable.Helpers.React.Props
 open System.Diagnostics
@@ -510,5 +511,5 @@ let makeShiftTooltip (h, v, orientation) (dp : DataPath, dpAfter : DataPath, uFA
     makeEditorInfoButtonWithTheme "light" lineTipsClickable (h, (v + 1), orientation) "Shift" diagram
 
 
-
+*)
 

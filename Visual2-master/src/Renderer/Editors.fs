@@ -65,7 +65,7 @@ let updateAllEditors readOnly =
     setTheme (theme) |> ignore
     setCustomCSS "--editor-font-size" (sprintf "%spx" vSettings.EditorFontSize)
 
-
+(*
 // Disable the editor and tab selection during execution
 let disableEditors() =
     Refs.fileTabMenu.classList.add ("disabled-click")
@@ -76,6 +76,7 @@ let disableEditors() =
     updateEditor Refs.currentFileTabId true
     Refs.darkenOverlay.classList.remove ("invisible")
     Refs.darkenOverlay.classList.add ([| "disabled-click" |])
+    *)
 
 // Enable the editor once execution has completed
 let enableEditors() =
@@ -83,6 +84,7 @@ let enableEditors() =
     Refs.fileTabMenu.onclick <- (fun _ -> createObj [])
     updateEditor Refs.currentFileTabId false
     Refs.darkenOverlay.classList.add ([| "invisible" |])
+
 
 let mutable decorations : obj list = []
 let mutable lineDecorations : obj list = []
@@ -149,6 +151,7 @@ let highlightNextInstruction tId number =
 /// lineNumber: int - line to decorate, starting at 1.
 /// hoverLst: hover attached to line.
 /// gHoverLst: hover attached to margin glyph.</summary>
+(*
 let makeErrorInEditor tId lineNumber (hoverLst : string list) (gHoverLst : string list) =
     let makeMarkDown textLst =
         textLst
@@ -180,7 +183,7 @@ let makeErrorInEditor tId lineNumber (hoverLst : string list) (gHoverLst : strin
 
 let revealLineInWindow tId (lineNumber : int) =
     Refs.editors.[tId]?revealLineInCenterIfOutsideViewport (lineNumber) |> ignore
-
+*)
 //*************************************************************************************
 //                              EDITOR CONTENT WIDGETS
 //*************************************************************************************
@@ -201,7 +204,7 @@ let findCodeEnd (lineCol : int) =
             | s :: _ -> (s.Length / tabSize) * tabSize + (if s.Length % tabSize > 0 then tabSize else 0)
             | [] -> 0
 
-
+(*
 /// Make execution tooltip info for the given instruction and line v, dp before instruction dp.
 /// Does nothing if opcode is not documented with execution tooltip
 let toolTipInfo (v : int, orientation : string)
@@ -290,3 +293,4 @@ let toolTipInfo (v : int, orientation : string)
             | DP.Op2.RegisterWithRRX rn -> makeShiftTooltip pos (dp, dp', uF') rn (None, alu) 1u op2
     | _ -> ()
 
+*)

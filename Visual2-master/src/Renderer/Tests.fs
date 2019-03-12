@@ -8,6 +8,8 @@
 /// Run automatic emulator testing
 
 module Tests
+
+(*
 open System
 open ExecutionTop
 open Integration
@@ -360,3 +362,4 @@ let runAllEmulatorTests() =
 //                              CUSTOM TESTBENCH CODE
 //*************************************************************************************
 
+*)
