@@ -78,11 +78,14 @@ let init() =
 
     Refs.saveFileBtn.addEventListener_click (fun _ -> MenuBar.interlock "save file" Files.saveFile)
 
-(*
+
     Refs.runSimulationBtn.addEventListener_click (fun _ ->
-        Stats.readOnlineInfo Stats.RunningCode
-        Integration.runCode ExecutionTop.NoBreak () :> obj
+        currentTabText() |> Integration.parseText |> ignore
+
+        //Stats.readOnlineInfo Stats.RunningCode
+        //Integration.runCode ExecutionTop.NoBreak () :> obj
     )
+(*
     stepForwardBtn.addEventListener_click (fun _ ->
         Integration.stepCode() :> obj
     )
@@ -116,12 +119,13 @@ let init() =
         Views.toggleReverseView()
         Views.updateMemory() :> obj
     )
-*)
+
 
     mapClickAttacher viewToIdTab Refs.viewTab (fun view ->
         Browser.console.log (sprintf "View changed to %A" view) |> ignore
         Views.setView view :> obj
     )
+*)
 
     (Refs.newFileTab).addEventListener_click(fun _ ->
         Browser.console.log "Creating a new file tab" |> ignore

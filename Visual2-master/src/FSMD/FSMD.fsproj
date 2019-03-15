@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <!-- <OutputType>Exe</OutputType> -->
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types.fs" />
@@ -22,6 +22,6 @@
     <Compile Include="BlockParser\BlockDispatcher.fs" />    
         
     <Compile Include="Program.fs" />
-    <PackageReference Include="Expecto.FsCheck" Version="8.9.1" />
+    <!-- <PackageReference Include="Expecto.FsCheck" Version="8.9.1" /> -->
   </ItemGroup>
 </Project>

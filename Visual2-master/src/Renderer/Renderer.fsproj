@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Emulator\Emulator.fsproj" />
+    <ProjectReference Include="..\FSMD\FSMD.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

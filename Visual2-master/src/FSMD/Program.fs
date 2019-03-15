@@ -1,4 +1,6 @@
 // Learn more about F# at http://fsharp.org
+module FSMDTOP
+
 open System
 open System.IO
 open Types
@@ -8,6 +10,7 @@ open TableHandler
 open BlockHandlers
 open BlockDispatcher
 
+(*  
 let fileStream (fPath:string) =
     try
         File.ReadAllLines(fPath) |> Ok
@@ -22,7 +25,7 @@ let testFilePath = @"markdown.txt"
 /// convert string array into list array
 let linesList = fileStream testFilePath
                |> function | Ok sList -> Some (Array.toList sList) | Error _ -> None
-               
+             
 [<EntryPoint>]
 let main argv =
 
@@ -35,3 +38,9 @@ let main argv =
     |> printfn "%A"
   
     0 // return an integer exit code
+*)
+
+let FSMDTop lines = 
+    lines
+    |> blockParser
+    |> blockDispatcher

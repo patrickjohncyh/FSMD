@@ -7,6 +7,44 @@
 
 /// integrate emulator code with renderer
 module Integration
+
+
+open FSMDTOP
+open Types
+open Views
+open Refs
+open Fable.Import.Browser
+open Fable.Core.JsInterop
+open Fable.Import
+
+let blockListToDOM blockList =
+    let root = makeElement "div" "markdown-output-root" " is harvin?"
+    let viewer = getHtml "viewer"
+    let blockToDOM block = 
+        match block with
+        | Paragraph eList 
+            -> makeElement "p" "markdown-output" "Where is harvin?"
+        | _ -> failwithf "What? Not implemented yet"
+        
+    let HTMLToNode htmlElement:Node =htmlElement
+
+    blockList 
+    |> List.map blockToDOM 
+    |> List.map HTMLToNode 
+    |> addToDOM viewer 
+
+    //printfn "%A" viewer
+   // printfn "%A" root
+   // addToDOM viewer [root]
+
+
+
+let parseText lines =
+    FSMDTop lines |> blockListToDOM |> ignore  
+    // printfn "%A" out |> ignore
+
+
+
 (*
 open EEExtensions
 open Tabs
