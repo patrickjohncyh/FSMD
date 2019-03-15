@@ -17,16 +17,35 @@ open Fable.Import.Browser
 open Fable.Core.JsInterop
 open Fable.Import
 
+let HTMLToNode htmlElement:Node =htmlElement
+
+let rec elementToDOM element =
+    let el = match element with
+             | Text text      -> document.createTextNode text :> Node
+             | Emphasis eList -> 
+                let parent   = makeElement "em" "markdown-output" ""
+                let children = eList |> List.map elementToDOM
+                addToDOM parent children
+             | Strong eList -> 
+                let parent   = makeElement "strong" "markdown-output" ""
+                let children = eList |> List.map elementToDOM
+                addToDOM parent children   
+             | CodeSpan eList -> 
+                let parent   = makeElement "code" "markdown-output" ""
+                let children = eList |> List.map elementToDOM
+                addToDOM parent children   
+             | _ -> failwithf "What? Not implemented yet"
+    el |> HTMLToNode
+
 let blockListToDOM blockList =
-    let root = makeElement "div" "markdown-output-root" " is harvin?"
     let viewer = getHtml "viewer"
     let blockToDOM block = 
         match block with
         | Paragraph eList 
-            -> makeElement "p" "markdown-output" "Where is harvin?"
+            -> let children = eList |> List.map elementToDOM
+               let parent = makeElement "p" "markdown-output" ""
+               addToDOM parent children
         | _ -> failwithf "What? Not implemented yet"
-        
-    let HTMLToNode htmlElement:Node =htmlElement
 
     blockList 
     |> List.map blockToDOM 
