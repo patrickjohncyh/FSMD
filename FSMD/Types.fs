@@ -8,8 +8,12 @@ type BlockId =
     | SetexHeading2
     | ThematicBreak
     | Para
-    | BlockQuote 
+    | BlockQuote
     | CBlock
+    | FencedCBlock     //CodeBlock can have different language for highlighting purposes
+    | SpaceCBlock     // Whitespace codeblock
+    | FencedCBlockT    //Tag of fenced codeblock
+    | SpaceCBlockT      //Tag of spaced codeblock
     | BlankLine
     | LRefDec
     | LRefDecB   // Beginning of link reference
@@ -19,6 +23,9 @@ type BlockId =
 
 /// Record type to store link reference declarations
 and LinkRefD = {lText: string ; lURL: string ; lTitle : string option}
+
+/// Adding more languages for future works
+and Lang     = | Js | Python | Ruby | NoLang 
 
 /// Block record type
 type RawBlock = {blocktype: BlockId ; mData: string}
