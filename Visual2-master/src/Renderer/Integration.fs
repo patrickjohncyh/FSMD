@@ -102,23 +102,23 @@ let blockListToDOM blockList =
                addToDOM parent children
         | H2 eList ->
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
+               let parent = makeElement "h2" "markdown-output" ""
                addToDOM parent children
         | H3 eList ->
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
+               let parent = makeElement "h3" "markdown-output" ""
                addToDOM parent children
         | H4 eList ->
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
+               let parent = makeElement "h4" "markdown-output" ""
                addToDOM parent children
         | H5 eList ->
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
+               let parent = makeElement "h5" "markdown-output" ""
                addToDOM parent children
         | H6 eList ->
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
+               let parent = makeElement "h6" "markdown-output" ""
                addToDOM parent children
         | _ -> failwithf "What? Not implemented yet"
 
