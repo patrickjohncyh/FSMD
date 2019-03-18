@@ -18,6 +18,7 @@ open Fable.Core.JsInterop
 open Fable.Import
 
 let HTMLToNode htmlElement:Node =htmlElement
+let NodeToHTML node:HTMLElement = node
 
 let rec elementToDOM element =
     let el = match element with
@@ -33,33 +34,110 @@ let rec elementToDOM element =
              | CodeSpan eList -> 
                 let parent   = makeElement "code" "markdown-output" ""
                 let children = eList |> List.map elementToDOM
-                addToDOM parent children   
+                addToDOM parent children
+             | Hardbreak ->
+                let br = document.createElement "br"
+                HTMLToNode br
+             | Softbreak -> 
+                let space = document.createTextNode " " 
+                HTMLToNode space
+             | Link linkInfo ->
+                let parent = document.createElement "a" :?> HTMLAnchorElement
+                let linkText = List.map elementToDOM linkInfo.linkText
+                let title = 
+                    match linkInfo.linkTitle with
+                    | Some lst -> 
+                        match lst with 
+                        | Text str :: _ -> str
+                        | _ -> failwithf "link Title cannot have styles"
+                    | None -> ""
+                let href =  
+                    match linkInfo.linkDest with
+                    | Text str :: _ -> str
+                    | _ -> failwithf "link Title cannot have styles"
+                parent.title <- title 
+                parent.href  <- href   
+                addToDOM parent linkText
+             | Image imageInfo ->
+                let parent = document.createElement "img" :?> HTMLImageElement
+                let alt =  match imageInfo.linkText with
+                           | Text str :: _ -> str
+                           | _ -> failwithf "link Title cannot have styles"
+                let title = 
+                    match imageInfo.linkTitle with
+                    | Some lst -> 
+                        match lst with 
+                        | Text str :: _ -> str
+                        | _ -> failwithf "link Title cannot have styles"
+                    | None -> ""
+                let src =  
+                    match imageInfo.linkDest with
+                    | Text str :: _ -> str
+                    | _ -> failwithf "link Title cannot have styles"
+                parent.alt <- alt 
+                parent.src  <- src   
+                parent.title <- title
+                HTMLToNode parent
+             //| LinkRef lrInfo     ->     not implemented 
+             //| ImageRef lrInfo    ->     not implemented
+             //| Katex str          ->     not implemented 
              | _ -> failwithf "What? Not implemented yet"
     el |> HTMLToNode
 
 let blockListToDOM blockList =
-    let viewer = getHtml "viewer"
+    let parent = getHtml "viewer"
+    let stubDiv = parent.firstChild
+    let stubReplacer = document.createElement "div"
+    let replaceStub (parent:Node) content =
+        parent.replaceChild(content,stubDiv)
     let blockToDOM block = 
         match block with
-        | Paragraph eList 
-            -> let children = eList |> List.map elementToDOM
+        | Paragraph eList ->
+               let children = eList |> List.map elementToDOM
                let parent = makeElement "p" "markdown-output" ""
+               addToDOM parent children
+        | H1 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
+               addToDOM parent children
+        | H2 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
+               addToDOM parent children
+        | H3 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
+               addToDOM parent children
+        | H4 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
+               addToDOM parent children
+        | H5 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
+               addToDOM parent children
+        | H6 eList ->
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "h1" "markdown-output" ""
                addToDOM parent children
         | _ -> failwithf "What? Not implemented yet"
 
     blockList 
     |> List.map blockToDOM 
     |> List.map HTMLToNode 
-    |> addToDOM viewer 
+    |> addToDOM stubReplacer
+    |> replaceStub parent
 
     //printfn "%A" viewer
    // printfn "%A" root
    // addToDOM viewer [root]
 
-
+let removeAfterDoneUsedForPrintTest (list:Block list) =
+    printfn "%A" list
+    list
 
 let parseText lines =
-    FSMDTop lines |> blockListToDOM |> ignore  
+    FSMDTop lines |> removeAfterDoneUsedForPrintTest |> blockListToDOM |> ignore  
     // printfn "%A" out |> ignore
 
 
