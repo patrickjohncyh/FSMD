@@ -2,6 +2,7 @@ module BlockDispatcher
 
 open Types
 open BlockHandlers
+open TableHandler
 
 let rec blockDispatcher rawBlocks =
     let callBlockHandler rblock =
@@ -15,8 +16,8 @@ let rec blockDispatcher rawBlocks =
         | Heading6   -> rblock.mData |> h6BlockHandle
         | CBlock     -> rblock.mData |> codeBlockHandler
         | BlockQuote -> rblock.mData |> blockQuoteHandler blockDispatcher
-        | List       -> failwithf "What? Block dispatcher for List not implemented"
-        | TableBlock -> failwithf "What? Block dispatcher for Table not implemented"
+        | List       -> rblock.mData |> listBlockHandler blockDispatcher
+        | TableBlock -> rblock.mData |> tableHandler |> fun x -> [x] //failwithf "What? Block dispatcher for Table not implemented"
         | _          -> []
 
     match rawBlocks with
