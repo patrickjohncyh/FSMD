@@ -41,10 +41,16 @@ let listBlockHandler blockDispatcher (inputString: string) =
     let rec checkAppend (outputList: string list) (stringList:string list) =                //appends next line if not new list element
         let rec needAppend (inputString: string):bool =                                                 //lines without labels are appended to prev line
             let identifyLabel (inputString:string):bool =                                               //function will crash if 1st line does not have a label
-                let strContainsOnlyNumber (s:string) = System.Int32.TryParse s |> fst       
+                let correctLabel (inputString: string): bool =
+                    let strContainsOnlyNumber (str:string) = System.Int32.TryParse str |> fst
+                    let strContainsOnlyAlphabet(str:string) = 
+                        str
+                        |> Seq.tryFind (fun c -> not(System.Char.IsLetter(c)))
+                        |> Option.isNone
+                    (strContainsOnlyNumber inputString) || (strContainsOnlyAlphabet inputString)
                 match inputString with
-                |a when a.[a.Length - 1] = '.' -> strContainsOnlyNumber a.[0..(a.Length - 2)]
-                |a when a.[a.Length - 1] = ')' -> strContainsOnlyNumber a.[0..(a.Length - 2)] 
+                |a when a.[a.Length - 1] = '.' -> correctLabel a.[0..(a.Length - 2)]
+                |a when a.[a.Length - 1] = ')' -> correctLabel a.[0..(a.Length - 2)] 
                 |"*" -> true
                 |"+" -> true
                 |"-" -> true
