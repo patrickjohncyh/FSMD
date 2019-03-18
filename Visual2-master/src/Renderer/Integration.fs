@@ -90,7 +90,7 @@ let blockListToDOM blockList =
     let stubReplacer = document.createElement "div"
     let replaceStub (parent:Node) content =
         parent.replaceChild(content,stubDiv)
-    let blockToDOM block = 
+    let rec blockToDOM block = 
         match block with
         | Paragraph eList ->
                let children = eList |> List.map elementToDOM
@@ -119,6 +119,14 @@ let blockListToDOM blockList =
         | H6 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h6" "markdown-output" ""
+               addToDOM parent children
+        | CodeBlock eList ->                                            //cannot even produce blocklist
+               let children = eList |> List.map elementToDOM
+               let parent = makeElement "code" "markdown-output" ""
+               addToDOM parent children
+        | QuoteBlock bList ->
+               let children = bList |> List.map blockToDOM
+               let parent = makeElement "blockquote" "markdown-output" ""
                addToDOM parent children
         | _ -> failwithf "What? Not implemented yet"
 
