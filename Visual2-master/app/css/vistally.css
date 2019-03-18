@@ -134,7 +134,7 @@
 #dashboard {
     position: relative;
     overflow: hidden;
-    max-width: var(--dashboard-width);
+    /*max-width: var(--dashboard-width);*/
     min-width: var(--dashboard-width);
 }
 
@@ -144,13 +144,15 @@
 }
 
 #viewer {
-    position: fixed;
-    top: calc(25px + var(--header-height));
-    padding-top: 5px;
-    left: calc( 100vw - var(--dashboard-width) + 25px);
+    position: inherit;
+    top: 0px;
+    /*top: calc(25px + var(--header-height));*/
+    padding-top: 0px;
+    left: 3%;
+    /*left: calc( 100vw - var(--dashboard-width) + 25px);*/
     overflow-y: auto;
     height: calc( 100vh - (44px + var(--header-height)));
-    width: calc(var(--dashboard-width) - 50px);
+    width: 94%;
     background-color: white;
     padding-bottom: 30px; /* Allow scrolling slightly beyond the end */
 }
