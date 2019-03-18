@@ -17,7 +17,7 @@
  }
 /*  
  ::-webkit-scrollbar { 
-     display: none; 
+     display: none;
  } */
  
  audio:not([controls]) {
@@ -49,6 +49,10 @@
  
  small {
    font-size: 80%;
+ }
+
+ p {
+   font-size: 1.3em;
  }
  
  sub,
@@ -144,7 +148,7 @@
    height: 100%;
    padding: 0;
    margin: 0;
-   font-family: "fira-code", system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
+   /*font-family: "fira-code", system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;*/
    font-size: 13px;
    line-height: 1.6;
    color: #333;
@@ -621,6 +625,7 @@
    padding-right: 3px;
    padding-left: 3px;
    padding-bottom: 2px;
+   font-family: "fira-code", system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif
  }
  .toolbar-actions:before, .toolbar-actions:after {
    display: table;
@@ -719,6 +724,7 @@
  }
  
  .pane {
+   resize : horizontal;
    position: relative;
    overflow-y: auto;
    flex: 1;

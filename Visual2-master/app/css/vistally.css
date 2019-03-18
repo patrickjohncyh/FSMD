@@ -139,7 +139,7 @@
 }
 
 .editor {
-    height: calc(100% - 26px);
+    height: calc(100%);
     width: 100%;
 }
 
@@ -147,11 +147,11 @@
     position: fixed;
     top: calc(25px + var(--header-height));
     padding-top: 5px;
-    left: calc( 100vw - var(--dashboard-width) );
+    left: calc( 100vw - var(--dashboard-width) + 25px);
     overflow-y: auto;
     height: calc( 100vh - (44px + var(--header-height)));
-    width: var(--dashboard-width);
-    background-color: lightgrey;
+    width: calc(var(--dashboard-width) - 50px);
+    background-color: white;
     padding-bottom: 30px; /* Allow scrolling slightly beyond the end */
 }
 
@@ -174,6 +174,7 @@
     width: 100%;
     height: 27px;
     overflow: hidden;
+    font-family: "fira-code", system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif
 }
 
 .tab-file {
@@ -201,6 +202,7 @@
 }
 
 #file-view-pane {
+    resize: horizontal;
     text-align: center;
     height: 100%;
     overflow: hidden;
