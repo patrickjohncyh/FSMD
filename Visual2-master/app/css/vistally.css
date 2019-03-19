@@ -204,11 +204,13 @@
 }
 
 #file-view-pane {
-    resize: horizontal;
+    resize: none;
     text-align: center;
     height: 100%;
+    width: 100%;
     overflow: hidden;
     background-color: black;
+
 }
 
 .monaco-editor {

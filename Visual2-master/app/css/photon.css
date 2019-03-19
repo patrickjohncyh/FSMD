@@ -715,6 +715,7 @@
  }
  
  .pane-group {
+   resize: horizontal;
    position: absolute;
    top: 0;
    right: 0;
@@ -729,6 +730,7 @@
    overflow-y: auto;
    flex: 1;
    border-left: 0.1px solid #ddd;
+
  }
  
  .pane:first-child {
@@ -2408,3 +2410,11 @@
    flex: none;
    padding: 3px 10px;
  }
+
+ .resizing {
+  background-color: black;
+  padding-bottom: 5px;
+  width: 50%;
+  resize: horizontal;
+  overflow: auto;
+}
