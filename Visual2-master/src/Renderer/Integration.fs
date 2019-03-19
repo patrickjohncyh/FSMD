@@ -16,6 +16,7 @@ open Refs
 open Fable.Import.Browser
 open Fable.Core.JsInterop
 open Fable.Import
+open Fable.PowerPack.Keyboard
 
 let HTMLToNode htmlElement:Node =htmlElement
 let NodeToHTML node:HTMLElement = node
@@ -149,6 +150,28 @@ let blockListToDOM blockList =
                     bRows |> List.map processOneBodyRow |> addToDOM tableNode |> ignore
                     tableNode
                 tableNode |> appendHeadRow |> appendBodyRows
+        | ListBlock (lstStruclst, indexAttribute) -> 
+                let parent = match indexAttribute with
+                            | "disc" -> document.createElement "ul"
+                            | _ -> failwithf " OL Not implemented"  
+                let rec innerFn lstStruclst parent = 
+                    match lstStruclst with
+                    | ListLines line :: rlst 
+                        -> let child = line.[0] |> blockToDOM 
+                           let li = document.createElement "li"
+                           li.appendChild child |> parent.appendChild |> ignore
+                           innerFn rlst parent
+                    | InnerList innerlist :: rlst
+                        -> let child = innerlist.[0] |> blockToDOM
+                           parent.lastChild.appendChild child
+                           innerFn rlst parent 
+                    | []-> parent
+
+
+
+                    
+
+                
         | _ -> failwithf "What? Not implemented yet"
 
     blockList 
