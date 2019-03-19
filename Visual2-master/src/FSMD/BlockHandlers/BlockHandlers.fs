@@ -189,7 +189,18 @@ let listBlockHandler blockDispatcher (inputString: string) =
     let getListHead (input:(int * (string * string)) list) = input.[0]
 
     let listList = separateList perfectList
-    let headerList = listList |> List.map getListHead |> List.map snd |> List.map fst
+
+    let convertHTMLFriendly (inputString: string): string =
+        let identifier = inputString.[inputString.Length - 1]
+        match identifier with
+        |'*' -> "disc"
+        |'+' -> "disc"
+        |'-' -> "disc"
+        |'.' -> inputString.[0..(inputString.Length - 2)]
+        |')' -> inputString.[0..(inputString.Length - 2)]
+        |_ -> failwithf ("perfectList is not perfect")
+
+    let headerList = listList |> List.map getListHead |> List.map snd |> List.map fst |> List.map convertHTMLFriendly
 
     let rec listToDOMElement (output: ListStructure list) (tupleList:(int * (string * string)) list): ListStructure list =  //convert parsed list to meta DOM
         match tupleList with 
