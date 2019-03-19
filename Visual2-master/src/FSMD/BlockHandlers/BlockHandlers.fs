@@ -206,11 +206,11 @@ let listBlockHandler blockDispatcher (inputString: string) =
         match tupleList with 
         |[] -> output
         |a when equalZero (fst a.[0]) -> 
-            let newOutput = List.append output [a.[0] |> snd |> snd |> blockParser |> blockDispatcher |> ListLines ]
+            let newOutput = List.append output [a.[0] |> snd |> snd |> fun x -> [x] |> Some |> blockParser |> blockDispatcher |> ListLines ]
             listToDOMElement newOutput a.[1..]
         |a -> 
             let list1 = fst (reduceZero [] a)
-            let newOutput = List.append output [ list1 |> getMarkDown |> blockParser |> blockDispatcher |> InnerList ]
+            let newOutput = List.append output [ list1 |> getMarkDown |> fun x -> [x] |> Some |> blockParser |> blockDispatcher |> InnerList ]
             let newTupleList = snd (reduceZero [] a)
             listToDOMElement newOutput newTupleList 
 
