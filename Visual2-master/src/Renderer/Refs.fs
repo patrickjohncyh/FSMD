@@ -64,6 +64,15 @@ type VSettings = {
 /// top-level function from tippy.js to make tooltips
 let tippy (rClass : string, tippyOpts : obj) : unit = importDefault "tippy.js"
 
+//-------------------------------------------KATEX-JS-----------------------------------------------
+
+
+
+[<Emit("require('katex');")>]
+let katex : obj = jsNative
+
+
+
 //-------------------------------------------VEX-JS-----------------------------------------------
 
 /// interfaces to vex.js
@@ -83,6 +92,7 @@ let vButton (caption : string) =
         "click" ==> fun () -> "abc"
     ]
     b
+
 let showVexConfirm (htmlMessage : string) (callBack : bool -> unit) =
     vex?dialog?confirm (createObj [
         "unsafeMessage" ==> htmlMessage;
