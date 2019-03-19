@@ -128,6 +128,27 @@ let blockListToDOM blockList =
                let children = bList |> List.map blockToDOM
                let parent = makeElement "blockquote" "markdown-output" ""
                addToDOM parent children
+        | Table {headerRow = hRow; bodyRows = bRows} -> 
+                let tableNode = document.createElement "table"
+                let appendHeadRow (tableNode:Node) = 
+                    let tr = document.createElement "tr"
+                    let processHeadColumns (column : InlineElement List) =
+                        let th = document.createElement "th"
+                        let thContent = column |> List.map elementToDOM
+                        addToDOM th thContent
+                    hRow |> List.map processHeadColumns |> addToDOM tr |> tableNode.appendChild |> ignore
+                    tableNode
+                let appendBodyRows (tableNode:Node) =
+                    let processOneBodyRow (entireRow:InlineElement List List) = 
+                        let tr = document.createElement "tr"
+                        let processBodyColumns (column : InlineElement List) =
+                            let td = document.createElement "td"
+                            let tdContent = column |> List.map elementToDOM
+                            addToDOM td tdContent
+                        entireRow |> List.map processBodyColumns |> addToDOM tr 
+                    bRows |> List.map processOneBodyRow |> addToDOM tableNode |> ignore
+                    tableNode
+                tableNode |> appendHeadRow |> appendBodyRows
         | _ -> failwithf "What? Not implemented yet"
 
     blockList 
