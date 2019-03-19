@@ -180,7 +180,7 @@ let listBlockHandler blockDispatcher (inputString: string) =
     let rec reduceZero (indentLines:(int * (string * string)) list) (tupleList:(int * (string * string)) list)  = //takes in tuple list, breaks down into 2 tuplelist: sublist followed by top level list
         match tupleList with 
         |[] -> (indentLines, tupleList) 
-        |a when equalZero (fst a.[0]) -> reduceZero (List.append indentLines [a.[0]]) tupleList.[1..]
+        |a when not(equalZero (fst a.[0])) -> reduceZero (List.append indentLines [a.[0]]) tupleList.[1..]
         |_ -> (indentLines, tupleList)
 
     let getMarkDown (tupleList:(int * (string * string)) list):string =                                           //if a sublist is found, change into a top level list and pass to blockparser
@@ -216,5 +216,5 @@ let listBlockHandler blockDispatcher (inputString: string) =
 
     let structureList = List.map (listToDOMElement []) listList
     let getBlock (input: ListStructure list * string):Block = ListBlock(input)
-    List.map getBlock (List.zip structureList headerList )
+    List.map getBlock (List.zip structureList headerList)
     
