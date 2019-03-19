@@ -210,12 +210,11 @@
     overflow: hidden;
     background-color: black;
 
-
+}
 
 .monaco-editor {
     text-align: left;
     /*-webkit-font-smoothing: antialiased;*/
-
 }
 
 
