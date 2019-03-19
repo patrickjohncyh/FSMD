@@ -47,8 +47,6 @@
     font-weight: bold;
 }
 
-
-
 .list-group-item {
     padding: 2px;
     border-color: lightgrey;
@@ -56,7 +54,7 @@
 
 .toolbar-header {
     border-bottom: 1px solid #c2c0c2;
-    background-color:cadetblue;
+    background-color: #285e74;
 }
 
 .toolbar-header .title {
@@ -144,17 +142,19 @@
 }
 
 #viewer {
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-top: 20px;
+    padding-bottom: 50px;
     position: inherit;
     top: 0px;
     /*top: calc(25px + var(--header-height));*/
-    padding-top: 0px;
     left: 3%;
     /*left: calc( 100vw - var(--dashboard-width) + 25px);*/
     overflow-y: auto;
-    height: calc( 100vh - (44px + var(--header-height)));
-    width: 94%;
+    height: 100%;
+    width: 95%;
     background-color: white;
-    padding-bottom: 30px; /* Allow scrolling slightly beyond the end */
 }
 
 .invisible {
@@ -205,13 +205,12 @@
 
 #file-view-pane {
     resize: none;
-    text-align: center;
     height: 100%;
     width: 100%;
     overflow: hidden;
     background-color: black;
 
-}
+
 
 .monaco-editor {
     text-align: left;
