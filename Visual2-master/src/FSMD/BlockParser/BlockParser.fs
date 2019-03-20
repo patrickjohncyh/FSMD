@@ -79,8 +79,6 @@ let (|BlockIdentifier|) str :(BlockId*string) =
     | RegexPat "#{2}\s"     line -> (Heading2, snd line)
     | RegexPat "#\s"        line -> (Heading1, snd line)
     | RegexPat ">\s*"       line -> (BlockQuote, snd line)
-    | RegexPat "\s{4}"      line -> (SpaceCBlockT, snd line) // 4 whitespace is a codeblock
-    | RegexPat "`{3}"       line -> (FencedCBlockT, snd line) // 3 backticks is also a codeblock
     | RegexPat "(\s){0,3}(\*\s*\*\s*\*\s*|_\s*_\s*_\s*)+" line -> (ThematicBreak, str)
     | RegexPat "\s{0,3}(-)+" line when snd line = "" -> (SetexHeading2, "")
     | RegexPat "\s{0,3}(=)+" line when snd line = "" -> (SetexHeading1, "")
@@ -89,9 +87,10 @@ let (|BlockIdentifier|) str :(BlockId*string) =
     | RegexPat "\s{0,3}[0-9]+.\s+"  line             -> (List, str) // The number of whitespace doesn't matter
     | RegexPat "\s{0,3}[0-9]+\)\s+" line             -> (List, str)
     | RegexPat "\s{0,3}-\s+"        line             -> (List, str)
-    | RegexPat "\s{0,3}\+\s+"       line             -> (List,str) // The number of whitespace doesn't matter
-    | RegexPat "\s{0,3}\*\s+"       line             -> (List,str)
-    | RegexPat "(\|\s---|\| )"      line             -> (TableBlock,str) // The number of whitespace doesn't matter
+    | RegexPat "\s{0,3}\+\s+"       line             -> (List, str) // The number of whitespace doesn't matter
+    | RegexPat "\s{0,3}\*\s+"       line             -> (List, str)
+    | RegexPat "`{3}"               line             -> (CBlockT, snd line) // 3 backticks is also a codeblock
+    | RegexPat "(\|\s---|\| )"      line             -> (TableBlock, str) // The number of whitespace doesn't matter
     | RegexPat @"\\"                line             -> match (snd line) with
                                                         | ""   -> (Para, "\\")
                                                         | rest -> (Para, rest) // \ is escape character, the rest parsed as paragraph
@@ -114,7 +113,8 @@ let blockParser stringList =
                              //Initialisation
                              | hu::tu   , [] 
                                 -> match fst hu with
-                                   | LRefDecB -> groupBlocks' tu [{blocktype=LRefDec;mData=snd hu}]
+                                   | LRefDecB      -> groupBlocks' tu [{blocktype=LRefDec;mData=snd hu}]
+                                   | CBlockT -> groupBlocks' tu [{blocktype=CBlock;mData=snd hu}]
                                    | _ -> groupBlocks' tu [{blocktype= fst hu ; mData=snd hu}]
                              | hu::tu , hg::tg 
                                 -> match fst hu , hg.blocktype with
@@ -129,21 +129,22 @@ let blockParser stringList =
                                    //A new link reference declaration is captured, make a new LRefDec block
                                    | LRefDecB, _      -> let bNew = {blocktype=LRefDec; mData=snd hu}
                                                          groupBlocks' tu ([bNew] @ (hg::tg))
-                                   //A new codeblock tag is captured, make a CBlock block
-                                   | cb, _ when cb=FencedCBlockT||cb=SpaceCBlockT ->
-                                     let bNew =
-                                       match cb with
-                                       | FencedCBlockT -> {blocktype=FencedCBlock; mData=snd hu}
-                                       | SpaceCBlockT  -> {blocktype=SpaceCBlock; mData=snd hu}
+                                   //If current block is a list, if the next one is not blankline
+                                   //A new codeblock tag is captured, make a CBlock
+                                   | CBlockT, a when not(a=CBlock)  -> let bNew = {blocktype=CBlock; mData=""}
+                                                                       groupBlocks' tu ([bNew] @ (hg::tg))
+                                   //If a CBlockT is found after CBlock, it terminates CBlock (add blankline)
+                                   | CBlockT, CBlock  ->
+                                     let bNew = {blocktype=BlankLine; mData=""}
                                      groupBlocks' tu ([bNew] @ (hg::tg))
                                    //Lazy continuation of container blocks,append \n to current block mData
                                    | Para, a when a=List
-                                                       ||a=BlockQuote||a=LRefDec||a=FencedCBlock||a=SpaceCBlock -> 
+                                                       ||a=BlockQuote||a=LRefDec||a=CBlock    -> 
                                      groupBlocks' tu ([{blocktype=a; mData=hg.mData+"\n"+snd hu}] @ tg)
                                    //If current block is the same as previous block, append to previous block mData
                                    | a , b when a = b 
-                                                && (not (a=BlankLine)) && (not(a=SpaceCBlock)) 
-                                                && (not (a=LRefDec))   && (not(a=FencedCBlock)) -> 
+                                                && (not (a=BlankLine)) && (not(a=CBlock)) 
+                                                && (not (a=LRefDec)) -> 
                                      groupBlocks' tu ([{blocktype= b; mData=hg.mData+"\n"+snd hu}] @ tg)
                                    //Else,create a new block
                                    | a , b            -> let bNew = {blocktype=a; mData=snd hu}
@@ -151,7 +152,8 @@ let blockParser stringList =
                              //If ungroupLst is empty, parsing finished, return groupedLst
                              | []     , _                                -> groupedLst
                        
-                         groupBlocks' ungroupBlocksLst [] |> List.rev // reverse the list
+                         groupBlocks' ungroupBlocksLst []
+                         |> List.rev // reverse the list
                      
                     ///Check linkrefdec block, if valid, output LREF block, else a paragraph
                     let checkLinkRefDecBlock (block: RawBlock) =
@@ -170,13 +172,6 @@ let blockParser stringList =
                     let groupedwithLinkRef =
                         groupBlocks blkIdStringTupLst
                         |> List.filter (fun blk -> not (blk.blocktype = BlankLine)) //remove blanklines
-                        |> List.fold (fun stateBlockLst curBlock ->
-                                      let block = 
-                                        match curBlock with
-                                        | {blocktype=FencedCBlock; mData=m} -> {blocktype=CBlock; mData=m}  //Changed to CBlock
-                                        | {blocktype=SpaceCBlock;  mData=m} -> {blocktype=CBlock; mData=m}  //Changed to CBlock
-                                        | _                                 -> curBlock                     //Else Passed as it is
-                                      stateBlockLst @[block]) []
                         |> List.fold (fun stateBlockLst curBlock -> stateBlockLst @[checkLinkRefDecBlock curBlock]) [] //check LRef
 
                     ///Put valid linkreference in a list for further referencing use
@@ -184,7 +179,7 @@ let blockParser stringList =
                         groupedwithLinkRef
                         |> List.filter (fun blk -> match blk.blocktype with
                                                     | LRefD l -> true
-                                                    | _      -> false)
+                                                    | _       -> false)
                         |> List.fold (fun lReflst lRefBlk ->    match lRefBlk with
                                                                 |{blocktype=LRefD l; mData= m} -> (lReflst @ [l])
                                                                 | _                           -> []) []
@@ -201,4 +196,4 @@ let blockParser stringList =
 
     | Some sList when sList.IsEmpty -> Error <| sprintf "Parsing failed, initial input string list is empty"
     | None -> Error <| sprintf "Parsing failed, no input list is given"
-
+    
