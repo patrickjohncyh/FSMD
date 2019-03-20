@@ -79,9 +79,18 @@ let rec elementToDOM element =
                 parent.src  <- src   
                 parent.title <- title
                 HTMLToNode parent
+             | Katex str -> 
+                    let parent = document.createElement "span"
+                    let innerHTML = katex?renderToString(
+                        str,
+                        createObj [ 
+                            "throwOnError" ==> false;
+                            "displayMode"  ==> false])
+                    parent.innerHTML <- innerHTML
+                    parent.firstChild
+
              //| LinkRef lrInfo     ->     not implemented 
              //| ImageRef lrInfo    ->     not implemented
-             //| Katex str          ->     not implemented 
              | _ -> failwithf "What? Not implemented yet"
     el |> HTMLToNode
 
@@ -175,8 +184,7 @@ let blockListToDOM blockList =
                                      |> ignore 
                            innerFn rlst parent 
                     | []-> parent
-                innerFn lstStrucLst parent
-                                
+                innerFn lstStrucLst parent                
         | _ -> failwithf "What? Not implemented yet"
 
     blockList 
