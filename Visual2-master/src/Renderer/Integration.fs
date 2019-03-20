@@ -16,6 +16,7 @@ open Refs
 open Fable.Import.Browser
 open Fable.Core.JsInterop
 open Fable.Import
+open Fable.PowerPack.Keyboard
 
 let HTMLToNode htmlElement:Node =htmlElement
 let NodeToHTML node:HTMLElement = node
@@ -149,6 +150,33 @@ let blockListToDOM blockList =
                     bRows |> List.map processOneBodyRow |> addToDOM tableNode |> ignore
                     tableNode
                 tableNode |> appendHeadRow |> appendBodyRows
+        | ListBlock (lstStrucLst, indexAttribute) -> 
+                let parent = match indexAttribute with
+                            | "disc" -> let ul = document.createElement "ul"
+                                        ul.style.listStyleType <- "disc"
+                                        ul
+                            | _ -> let ol = document.createElement "ol" :?> HTMLOListElement
+                                   ol.``type`` <- "1"
+                                   ol.start <- float(indexAttribute)
+                                   ol :> HTMLElement
+                let rec innerFn lstStruclst (parent:Node) = 
+                    match lstStruclst with
+                    | ListLines line :: rlst 
+                        -> let child = line.[0] |> blockToDOM 
+                           let li = document.createElement "li"
+                           li.appendChild child |> ignore
+                           parent.appendChild li |> ignore
+                           innerFn rlst parent
+                    | InnerList innerList :: rlst
+                        -> let child = innerList.[0] |> blockToDOM
+                           let lastChild = parent.lastChild
+                           lastChild |> (function | null -> parent.appendChild child
+                                                  | _ -> lastChild.appendChild child) 
+                                     |> ignore 
+                           innerFn rlst parent 
+                    | []-> parent
+                innerFn lstStrucLst parent
+                                
         | _ -> failwithf "What? Not implemented yet"
 
     blockList 
