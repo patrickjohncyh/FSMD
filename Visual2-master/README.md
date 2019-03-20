@@ -1,7 +1,7 @@
 # FSMD
 
-For a complete reference of markdown specifications that this project is based, click [here](https://spec.commonmark.org/0.28/)
-For a quick start go straight to [Getting Started](#getting-started).
+For a complete reference of markdown specifications that this project is based, click [here](https://spec.commonmark.org/0.28/)  
+For a quick start go straight to [Getting Started](#how-to-build).  
 The rest of the README gives a project and code overview.
 
 ## Go To
@@ -14,8 +14,8 @@ The rest of the README gives a project and code overview.
 
 ## Introduction
 
-FSMD is an F# markdown implementation that converts markdown texts into HTML DOM (Document Object Model).
-Which is then styled with CSS to produce interactive representations.
+FSMD is an F# markdown implementation that converts markdown texts into HTML DOM (Document Object Model),  
+which is then styled with CSS to produce interactive representations.
 
 This project's front end is based on https://github.com/ImperialCollegeLondon/Visual2 Renderer code.
 
@@ -32,7 +32,7 @@ Overall backend structure is as seen below:
 ```
 
 Overall Flowchart
-                                                       ---------------------------> Output (Block list, DOM-like structure)
+                                                       ---> Output (Block list, DOM-like structure)
                                                        |
                                                        |
                        ________________       ____________________      __________________       _________________
@@ -45,8 +45,8 @@ Overall Flowchart
                            |____________________________________________________|                       
 ```
 
-`Block Parser` reads each line of markdown text and identifies the types of each line storing it in a list and sending it to
-`Block Dispatcher` which will look at the list and converts each entry into a data type that resembles a DOM
+`Block Parser` reads each line of markdown text and identifies the types of each line storing it in a list and sending it to  
+`Block Dispatcher` which will look at the list and converts each entry into a data type that resembles a DOM  
 `Inline Parser` parses symbols that are used in markdwon to style inline text element.
 
 More in depth explanation about what each block does:
@@ -102,6 +102,7 @@ Here are several additional features not part of markdown specification but is d
                 must be added by either using `npm` or `yarn`
 
 ## Testing
+Say something more about testing other than unit tests
 
 ## File Structure
 
