@@ -10,10 +10,7 @@ type BlockId =
     | Para
     | BlockQuote
     | CBlock
-    | FencedCBlock     //CodeBlock can have different language for highlighting purposes
-    | SpaceCBlock     // Whitespace codeblock
-    | FencedCBlockT    //Tag of fenced codeblock
-    | SpaceCBlockT      //Tag of spaced codeblock
+    | CBlockT
     | BlankLine
     | LRefDec
     | LRefDecB   // Beginning of link reference
