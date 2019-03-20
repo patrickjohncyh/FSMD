@@ -158,7 +158,7 @@ let blockListToDOM blockList =
                             | _ -> let ol = document.createElement "ol" :?> HTMLOListElement
                                    ol.``type`` <- "1"
                                    ol.start <- float(indexAttribute)
-                                   ol
+                                   ol :> HTMLElement
                 let rec innerFn lstStruclst (parent:Node) = 
                     match lstStruclst with
                     | ListLines line :: rlst 
