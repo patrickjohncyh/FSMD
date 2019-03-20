@@ -83,12 +83,10 @@ type Block =
     | CodeBlock of InlineElement list
     | QuoteBlock of Block list
     | Table of TableCells                   
-    | TempBlock                 // TempBlock for testing
 
 and ListStructure =
     | InnerList of Block list   // need header
     | ListLines of Block list
-    | TempStruct                // tempStruct for testing
 
 and TableCells = {
     headerRow : InlineElement List List;
