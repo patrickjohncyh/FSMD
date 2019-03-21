@@ -45,17 +45,18 @@ let rec elementToDOM element =
              | Link linkInfo ->
                 let parent = document.createElement "a" :?> HTMLAnchorElement
                 let linkText = List.map elementToDOM linkInfo.linkText
+                let href =  
+                    match linkInfo.linkDest with
+                    | Text str :: _ -> str
+                    | _ -> ""
                 let title = 
                     match linkInfo.linkTitle with
                     | Some lst -> 
                         match lst with 
                         | Text str :: _ -> str
-                        | _ -> failwithf "link Title cannot have styles"
+                        | _ -> ""
                     | None -> ""
-                let href =  
-                    match linkInfo.linkDest with
-                    | Text str :: _ -> str
-                    | _ -> failwithf "link Title cannot have styles"
+                
                 parent.title <- title 
                 parent.href  <- href   
                 addToDOM parent linkText
@@ -131,8 +132,9 @@ let blockListToDOM blockList =
                let parent = makeElement "h6" "markdown-output" ""
                addToDOM parent children
         | CodeBlock eList ->                                            //cannot even produce blocklist
+               let preTag = makeElement "pre" "markdown-output" ""
                let children = eList |> List.map elementToDOM
-               let parent = makeElement "code" "markdown-output" ""
+               let parent = addToDOM preTag [makeElement "code" "markdown-output" ""]
                addToDOM parent children
         | QuoteBlock bList ->
                let children = bList |> List.map blockToDOM
