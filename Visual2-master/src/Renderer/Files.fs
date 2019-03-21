@@ -8,27 +8,15 @@
 /// implement load and save of assembler files
 
 module Files
-open Fable.Core
 open Fable.Core.JsInterop
 open Fable.Import
 open Fable.Import.Electron
 open Node.Exports
 open Fable.PowerPack
 open EEExtensions
-
-open Fable.Import.Browser
-
-
 open Refs
-open Fable
 open Settings
 open Tabs
-open Views
-
-open CommonData
-open ExecutionTop
-
-
 
 
 
@@ -63,8 +51,8 @@ let resultUndefined errCase x =
 let fileFilterOpts =
     ResizeArray [
         createObj [
-            "name" ==> "Assembly Code"
-            "extensions" ==> ResizeArray [ "s" ]
+            "name" ==> "MD File"
+            "extensions" ==> ResizeArray [ "md" ]
         ]
     ] |> Some
 
@@ -114,12 +102,12 @@ let filterBadName isSave path =
     |> function
         | [] -> []
         | pl -> List.last pl |> (fun name ->
-            if name = "Untitled.s"
+            if name = "Untitled.md"
             then
                 showVexAlert (
                     if isSave then
-                        "Can't save 'Untitled.s'- choose another name"
-                    else "Can't open file 'Untitled.s'. rename file to open it")
+                        "Can't save 'Untitled.md'- choose another name"
+                    else "Can't open file 'Untitled.md'. rename file to open it")
                 []
             else [ path ])
 
