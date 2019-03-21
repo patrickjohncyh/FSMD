@@ -57,7 +57,8 @@ More in depth explanation about what each block does:
 
 
 ### Frontend
-Say something about frontend
+The frontend of FSMD is a stripped down version of VISUAL2.
+The CSS\
 
 ## How to build
 The build instructions are more or less the same as [Visual2](https://github.com/ImperialCollegeLondon/Visual2)
