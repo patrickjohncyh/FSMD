@@ -5,7 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Refs.fs" />
-    <Compile Include="Stats.fs" />
     <Compile Include="Editors.fs" />
     <Compile Include="Tabs.fs" />
     <Compile Include="Settings.fs" />
@@ -15,7 +14,6 @@
     <Compile Include="Renderer.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Emulator\Emulator.fsproj" />
     <ProjectReference Include="..\FSMD\FSMD.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
