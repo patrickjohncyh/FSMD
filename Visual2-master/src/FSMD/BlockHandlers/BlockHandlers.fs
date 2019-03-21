@@ -27,7 +27,7 @@ let paragraphBlockHandler (inputString:string):Block list =
     [inputString |> inlineParser |> Paragraph]
 
 let codeBlockHandler (inputString:string):Block list =
-    [ [inputString |> Text] |> CodeBlock ]
+    [ [inputString.[1..]|> Text] |> CodeBlock ]
 
 let blockQuoteHandler blockDispatcher (inputString:string) :Block list=
     let inner = [inputString]

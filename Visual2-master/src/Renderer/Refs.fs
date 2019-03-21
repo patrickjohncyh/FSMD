@@ -22,7 +22,7 @@ open EEExtensions
 //                                  App Version
 // **********************************************************************************
 
-let appVersion = "1.06.9"
+let appVersion = "1.01"
 
 // **********************************************************************************
 //                               Types used in this module
@@ -527,10 +527,9 @@ let runPage url () =
     window.setMenuBarVisibility true
     window.loadURL url
     window.show()
-(*
+
 let runExtPage url () =
     electron.shell.openExternal url |> ignore
-    *)
 
 
 let writeToFile str path =

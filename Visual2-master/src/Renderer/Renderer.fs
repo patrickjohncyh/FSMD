@@ -20,6 +20,7 @@ Browser.console.log "Hi from renderer.fs" |> ignore
 open Refs
 open MenuBar
 
+
 /// Hack to provide a constant global variable
 /// set from command line arguments of main process.
 /// 0 => production. 1 => dev. 2 => debug.
@@ -34,10 +35,6 @@ let setDebugLevel() =
         if isArg "--debug" || isArg "-d" then 2
         elif isArg "-w" then 1
         else 0
-
-
-
-
 /// Attach a click event on each of the map elements to a function f
 /// which accepts the map element as an argument
 let mapClickAttacher map (refFinder : 'a -> HTMLElement) f =
@@ -79,11 +76,8 @@ let init() =
     Refs.saveFileBtn.addEventListener_click (fun _ -> MenuBar.interlock "save file" Files.saveFile)
 
     Refs.runSimulationBtn.addEventListener_click (fun _ ->
-        currentTabText() |> Integration.parseText |> ignore
+    currentTabText() |> Integration.parseText |> ignore)
 
-        //Stats.readOnlineInfo Stats.RunningCode
-        //Integration.runCode ExecutionTop.NoBreak () :> obj
-    )
 (*
     stepForwardBtn.addEventListener_click (fun _ ->
         Integration.stepCode() :> obj
@@ -152,8 +146,6 @@ let init() =
     printfn "Ending renderer init"
     vSettings <- checkSettings (getJSONSettings())
     Editors.updateAllEditors false
-
-    //Tooltips.addFixedToolTips()
 
     Stats.readOnlineInfo Stats.Startup
 

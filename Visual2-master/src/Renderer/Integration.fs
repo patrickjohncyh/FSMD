@@ -5,21 +5,46 @@
     Description: Code to integrate the emulator with the renderer
 *)
 
-/// integrate emulator code with renderer
+/// integrate emulator code with FSMD
+/// doing the Model-View-Update
 module Integration
 
 
 open FSMDTOP
 open Types
-open Views
 open Refs
 open Fable.Import.Browser
 open Fable.Core.JsInterop
-open Fable.Import
-open Fable.PowerPack.Keyboard
 
-let HTMLToNode htmlElement:Node =htmlElement
+let HTMLToNode htmlElement:Node = htmlElement
 let NodeToHTML node:HTMLElement = node
+
+
+/// make an HTML element
+/// id = element name
+/// css = css class names to add to classlist
+/// inner = inner HTML (typically text) for element
+let makeElement (id : string) (css : string) (inner : string) =
+        let el = document.createElement id
+        el.classList.add css
+        el.innerHTML <- inner
+        el
+/// appends child node after last child in parent node, returns parent
+/// operator is left associative
+/// child: child node
+/// node: parent node.
+let (&>>) (node : Node) child =
+    node.appendChild child |> ignore
+    node
+
+let createDOM (parentID : string) (childList : Node list) =
+    let parent = document.createElement parentID
+    List.iter (fun ch -> parent &>> ch |> ignore) childList
+    parent
+
+let addToDOM (parent : Node) (childList : Node list) =
+    List.iter (fun ch -> parent &>> ch |> ignore) childList
+    parent
 
 let rec elementToDOM element =
     let el = match element with
@@ -155,12 +180,14 @@ let blockListToDOM blockList =
                let children = bList |> List.map blockToDOM
                let parent = makeElement "blockquote" "markdown-output" ""
                addToDOM parent children
-        | Table {headerRow = hRow; bodyRows = bRows} -> 
+        | Table {headerRow = hRow; bodyRows = bRows; tableFormat = (width,height)} -> 
                 let tableNode = document.createElement "table"
                 let appendHeadRow (tableNode:Node) = 
                     let tr = document.createElement "tr"
                     let processHeadColumns (column : InlineElement List) =
-                        let th = document.createElement "th"
+                        let th = document.createElement "th" :?> HTMLTableCellElement
+                        th.width <- width
+                        th.height <- height 
                         let thContent = column |> List.map elementToDOM
                         addToDOM th thContent
                     hRow |> List.map processHeadColumns |> addToDOM tr |> tableNode.appendChild |> ignore
@@ -169,7 +196,8 @@ let blockListToDOM blockList =
                     let processOneBodyRow (entireRow:InlineElement List List) = 
                         let tr = document.createElement "tr"
                         let processBodyColumns (column : InlineElement List) =
-                            let td = document.createElement "td"
+                            let td = document.createElement "td" :?> HTMLTableCellElement
+                            td.height <- height
                             let tdContent = column |> List.map elementToDOM
                             addToDOM td tdContent
                         entireRow |> List.map processBodyColumns |> addToDOM tr 
@@ -209,10 +237,6 @@ let blockListToDOM blockList =
     |> List.map HTMLToNode 
     |> addToDOM stubReplacer
     |> replaceStub parent
-
-    //printfn "%A" viewer
-   // printfn "%A" root
-   // addToDOM viewer [root]
 
 let removeAfterDoneUsedForPrintTest (list:Block list) =
     printfn "%A" list
