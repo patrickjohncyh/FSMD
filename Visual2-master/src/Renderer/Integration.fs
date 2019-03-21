@@ -95,6 +95,19 @@ let rec elementToDOM element =
              | _ -> failwithf "What? Not implemented yet"
     el |> HTMLToNode
 
+let makeIdentifier text =
+    text 
+    |> String.map (function | ' ' -> '-' | a -> a)
+    |> (fun x -> x.ToLower())
+
+let addIdentifier (x:Node) = 
+    let HTMLEl = x :?> HTMLElement
+    let text = x.textContent
+    HTMLEl.id <- makeIdentifier text
+    HTMLEl :> Node
+
+
+
 let blockListToDOM blockList =
     let parent = getHtml "viewer"
     let stubDiv = parent.firstChild
@@ -107,30 +120,31 @@ let blockListToDOM blockList =
                let children = eList |> List.map elementToDOM
                let parent = makeElement "p" "markdown-output" ""
                addToDOM parent children
+
         | H1 eList ->
-               let children = eList |> List.map elementToDOM
-               let parent = makeElement "h1" "markdown-output" ""
-               addToDOM parent children
+            let children = eList |> List.map elementToDOM
+            let parent = makeElement "h1" "markdown-output" ""
+            (parent,children) ||> addToDOM  |> addIdentifier
         | H2 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h2" "markdown-output" ""
-               addToDOM parent children
+               (parent,children) ||> addToDOM  |> addIdentifier
         | H3 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h3" "markdown-output" ""
-               addToDOM parent children
+               (parent,children) ||> addToDOM  |> addIdentifier
         | H4 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h4" "markdown-output" ""
-               addToDOM parent children
+               (parent,children) ||> addToDOM  |> addIdentifier
         | H5 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h5" "markdown-output" ""
-               addToDOM parent children
+               (parent,children) ||> addToDOM  |> addIdentifier
         | H6 eList ->
                let children = eList |> List.map elementToDOM
                let parent = makeElement "h6" "markdown-output" ""
-               addToDOM parent children
+               (parent,children) ||> addToDOM  |> addIdentifier
         | CodeBlock eList ->                                            //cannot even produce blocklist
                let preTag =  makeElement "pre" "markdown-output" "" :> Node
                let codeTag = makeElement "code" "markdown-output" ""
@@ -205,7 +219,7 @@ let removeAfterDoneUsedForPrintTest (list:Block list) =
     list
 
 let parseText lines =
-    FSMDTop lines |> removeAfterDoneUsedForPrintTest |> blockListToDOM |> ignore  
+    FSMDTop lines |> blockListToDOM |> ignore  
     // printfn "%A" out |> ignore
 
 

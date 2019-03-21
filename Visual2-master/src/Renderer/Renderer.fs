@@ -78,7 +78,6 @@ let init() =
 
     Refs.saveFileBtn.addEventListener_click (fun _ -> MenuBar.interlock "save file" Files.saveFile)
 
-
     Refs.runSimulationBtn.addEventListener_click (fun _ ->
         currentTabText() |> Integration.parseText |> ignore
 
@@ -100,7 +99,6 @@ let init() =
         Integration.resetEmulator() :> obj
     )
    
-
     mapClickAttacher repToId Refs.representation (fun rep ->
         Browser.console.log (sprintf "Representation changed to %A" rep) |> ignore
         Views.setRepresentation rep |> ignore
@@ -126,10 +124,25 @@ let init() =
         Views.setView view :> obj
     )
 *)
+    document.addEventListener_keyup(fun _ -> 
+                    Browser.window.setTimeout ((fun _ ->
+                             currentTabText() 
+                             |> Integration.parseText 
+                             |> ignore),
+                              3000, 
+                              []))
 
     (Refs.newFileTab).addEventListener_click(fun _ ->
         Browser.console.log "Creating a new file tab" |> ignore
         MenuBar.interlock "create a new tab" (fun () -> Tabs.createFileTab() |> ignore))
+
+
+    document.getElementById("tabs-files").addEventListener_click(fun _ ->
+                             currentTabText() 
+                             |> Integration.parseText 
+                             |> ignore)
+
+
 
     // create electron menus
     MenuBar.mainMenu()

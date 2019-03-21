@@ -27,7 +27,6 @@ let paragraphBlockHandler (inputString:string):Block list =
     [inputString |> inlineParser |> Paragraph]
 
 let codeBlockHandler (inputString:string):Block list =
-    printfn "%A" inputString
     [ [inputString |> Text] |> CodeBlock ]
 
 let blockQuoteHandler blockDispatcher (inputString:string) :Block list=
