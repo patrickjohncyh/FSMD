@@ -133,6 +133,8 @@ let blockParser stringList =
                                    //A new codeblock tag is captured, make a CBlock
                                    | CBlockT, a when not(a=CBlock)  -> let bNew = {blocktype=CBlock; mData=""}
                                                                        groupBlocks' tu ([bNew] @ (hg::tg))
+                                   | BlankLine , CBlock             -> 
+                                     groupBlocks' tu ([{blocktype=CBlock; mData=hg.mData+"\n"}]@ tg) 
                                    //If a CBlockT is found after CBlock, it terminates CBlock (add blankline)
                                    | CBlockT, CBlock  ->
                                      let bNew = {blocktype=BlankLine; mData=""}
