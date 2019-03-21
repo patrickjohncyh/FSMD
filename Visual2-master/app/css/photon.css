@@ -84,7 +84,7 @@
  }
 
  code{
-   color: #c71d47;
+   /*color: #c71d47;*/
    border-radius: 10px;
   background: #f9f2f4;
   padding: 5px; 
@@ -128,7 +128,7 @@
  
  table {
    text-align: center;
-   border: 1px solid #dce0e4;
+   /*border: 1px solid #dce0e4;*/
    margin-top : 10px;
    margin-bottom: 10px;
    border-collapse: collapse;
@@ -2350,7 +2350,7 @@
  
  th {
   border: 0.25px solid #dce0e4;
-   background-color: #f6f8fa;
+   /*background-color: #f6f8fa;*/
    font-weight: normal;
    color: black;
    padding: 2px 15px;
