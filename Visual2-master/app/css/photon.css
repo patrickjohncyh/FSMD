@@ -41,19 +41,12 @@
  dfn {
    font-style: italic;
  }
- 
- h1 {
-   font-size: 2em;
-   margin: 0.67em 0;
- }
+
  
  small {
    font-size: 80%;
  }
 
- p {
-   font-size: 1.3em;
- }
  
  sub,
  sup {
@@ -75,20 +68,6 @@
    overflow: auto;
  }
  
- code,
- kbd,
- pre,
- samp {
-   font-family: "fira-code", monospace, monospace;
-   font-size: 1em;
- }
-
- code{
-   /*color: #c71d47;*/
-   border-radius: 10px;
-  background: #f9f2f4;
-  padding: 5px; 
- }
  
  button,
  input,
@@ -126,40 +105,10 @@
    padding: 0;
  }
  
- table {
-   text-align: center;
-   /*border: 1px solid #dce0e4;*/
-   margin-top : 10px;
-   margin-bottom: 10px;
-   border-collapse: collapse;
-   border-spacing: 0;
- }
- 
- td,
- th {
-   padding: 0;
-   border: 0.3px solid #f6f8fa;
- }
- 
- * {
-   /* cursor: default; */
-   -webkit-user-drag: text;
-   -webkit-user-select: none;
-   user-select: none;
-   -webkit-box-sizing: border-box;
-   box-sizing: border-box;
- }
- 
  html {
    height: 100%;
    width: 100%;
    overflow: hidden;
- }
-
- p{
-  line-height: 120%;
-  margin-top: 0px;
-   margin-bottom: 0px;
  }
  
  body {
@@ -180,45 +129,7 @@
    border: 0;
    border-bottom: 1px solid #ddd;
  }
- 
- h1, h2, h3, h4, h5, h6 {
-   margin-top: 0px;
-   margin-bottom: 0px;
-   font-weight: 500;
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
- }
- 
- h1 {
-   line-height: 40px;
-   font-size: 36px;
- }
- 
- h2 {
-   font-size: 30px;
-   line-height: 34px;
- }
- 
- h3 {
-   font-size: 24px;
-   line-height: 28px;
- }
- 
- h4 {
-   font-size: 18px;
-   line-height: 22px;
- }
- 
- h5 {
-   font-size: 14px;
-   line-height: 18px;
- }
- 
- h6 {
-   font-size: 12px;
-   line-height: 16px;
- }
+
  
  .footer-margin {
    margin: 0.5em;
