@@ -142,9 +142,8 @@
     width: 100%;
 }
 
-#viewer {
-    
-    padding-left: 50px;
+#viewer {  
+/*    padding-left: 50px;*/
     padding-right: 50px;
     padding-top: 60px;
     padding-bottom: 50px;
