@@ -132,10 +132,11 @@ let blockListToDOM blockList =
                let parent = makeElement "h6" "markdown-output" ""
                addToDOM parent children
         | CodeBlock eList ->                                            //cannot even produce blocklist
-               let preTag = makeElement "pre" "markdown-output" ""
+               let preTag =  makeElement "pre" "markdown-output" "" :> Node
+               let codeTag = makeElement "code" "markdown-output" ""
                let children = eList |> List.map elementToDOM
-               let parent = addToDOM preTag [makeElement "code" "markdown-output" ""]
-               addToDOM parent children
+               let parent = addToDOM codeTag children
+               addToDOM preTag [parent]
         | QuoteBlock bList ->
                let children = bList |> List.map blockToDOM
                let parent = makeElement "blockquote" "markdown-output" ""
