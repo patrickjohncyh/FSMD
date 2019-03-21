@@ -87,7 +87,8 @@ and ListStructure =
 
 and TableCells = {
     headerRow : InlineElement List List;
-    bodyRows : InlineElement List List List
+    bodyRows : InlineElement List List List;
+    tableFormat : (string * string)
 }
 
 type ListType =
