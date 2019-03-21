@@ -130,6 +130,7 @@
 }
 
 #dashboard {
+    font-family: sans-serif;
     position: relative;
     overflow: hidden;
     /*max-width: var(--dashboard-width);*/
@@ -142,6 +143,7 @@
 }
 
 #viewer {
+    
     padding-left: 50px;
     padding-right: 50px;
     padding-top: 60px;

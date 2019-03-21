@@ -23,7 +23,7 @@ let (|RegexPrefix2|_|) pat txt =
 let (|Token2String|) token = 
     let translation = [ SBracketO,"["   ;       SBracketC,"]";      RBracketO,"(";     
                         RBracketC,")";          QuoteMark,"\"";     Whitespace," ";
-                        Newline, "\\n";         Exclamation,"!";    Asterisk,"*";       
+                        Newline, " \n";         Exclamation,"!";    Asterisk,"*";       
                         EmpOpenAst,"*(";        EmpCloseAst,")*";   EmpOpenUnd,"_(";    
                         EmpCloseUnd,")_";       Underscore,"_";     LessThan,"<";
                         MoreThan,">";           Backslash,"\\";     KatexO,"%{";
