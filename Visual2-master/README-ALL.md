@@ -9,7 +9,6 @@ The rest of the README gives a project and code overview.
 * [Module Structures](#module-structures)
 * [How to Build](#how-to-build)
 * [Features Implemented](#features-implemented)
-* [Testing](#testing)
 * [Future Extensions](#future-works)
 
 ## Introduction
@@ -107,9 +106,6 @@ Here are several additional features not part of markdown specification but is d
 * Fragment Identifier  ---> Able to jump to the part of the document referred to.
 * Resizeable panes
 * Tables with adjustable height and weight
-
-## Testing
-Say something more about testing other than unit tests
 
 ## File Structure
 
