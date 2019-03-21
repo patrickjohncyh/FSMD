@@ -11,7 +11,6 @@ The rest of the README gives a project and code overview.
 * [Features Implemented](#features-implemented)
 * [Testing](#testing)
 * [Future Extensions](#future-works)
-* [Group Summary
 
 ## Introduction
 
