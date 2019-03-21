@@ -102,6 +102,7 @@ let loadFileIntoTab tId (fileData : Node.Buffer.Buffer) =
     let editor = editors.[tId]
     editor?setValue (fileData.toString ("utf8")) |> ignore
     setTabSaved tId
+    currentTabText() |> Integration.parseText |> ignore
 
 
 let openListOfFiles (fLst : string list) =
@@ -272,7 +273,7 @@ let helpMenu() =
                     showVexAlert (sprintf "<h4>FSMD Markdown Parser v%s</h4> " Refs.appVersion +
                                  "(c) 2019, Imperial College <br> Acknowledgements: Salman Arif (VisUAL), HLP 2019 class" +
                                  " (F# implementation), with special mention toTom Clarke," +
-                                 " Patrick John Isiah Chia, and HLP Team 5"))
+                                 " Patrick John Isaiah Chia, and HLP Team 5"))
             ])
 
 

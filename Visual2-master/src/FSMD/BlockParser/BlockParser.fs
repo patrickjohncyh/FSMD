@@ -55,7 +55,7 @@ let lRefHandler lblock =
         match mD with
         | LRefTextId lTxt' -> 
             match (snd lTxt') with
-            | LRefURLId lURL' -> let charToTrim=[|' '; '\n';''';char(34)|]
+            | LRefURLId lURL' -> let charToTrim=[|' '; '\n';''';char(34);'\r'|]
                                  match (snd lURL') with
                                  | LRefTitleId lTl' -> Ok (LRefD {lText=(fst lTxt').Trim(charToTrim);
                                                                        lURL=(fst lURL').Trim(charToTrim);
@@ -69,8 +69,10 @@ let lRefHandler lblock =
     | _                 -> Error <|sprintf "not lref block"
 
 /// take in a line of string, do regex, and outputs a tuple of (BlockId*string)
-let (|BlockIdentifier|) str :(BlockId*string) =
-    match str with
+let (|BlockIdentifier|) (str:string) :(BlockId*string) =
+    let charToTrim=[|'\n';'\r'|]
+    let stripStr = str.Trim(charToTrim)
+    match stripStr with
     | RegexPat "#{6}#+\s*"  line -> (Para, str)
     | RegexPat "#{6}\s"     line -> (Heading6, snd line)
     | RegexPat "#{5}\s"     line -> (Heading5, snd line)

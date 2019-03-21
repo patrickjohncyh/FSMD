@@ -34,7 +34,7 @@ let editorOptions (readOnly : bool) =
                         "renderIndentGuides" ==> false
                         "fontFamily" ==> "fira-code"
                         "fontWeight" ==> "bold"
-                        "language" ==> "arm";
+                        "language" ==> "markdown";
                         "roundedSelection" ==> false;
                         "scrollBeyondLastLine" ==> false;
                         "readOnly" ==> readOnly;
@@ -87,7 +87,7 @@ let lineDecoration _editor _decorations _range _name = jsNative
 [<Emit "$0.deltaDecorations($1, [{ range: new monaco.Range(1,1,1,1), options : { } }]);">]
 let removeDecorations _editor _decorations =
     jsNative
-
+(*
 // Remove all text decorations associated with an editor
 let removeEditorDecorations tId =
     if tId <> -1 then
@@ -150,94 +150,4 @@ let findCodeEnd (lineCol : int) =
             match String.splitRemoveEmptyEntries [| ';' |] line |> Array.toList with
             | s :: _ -> (s.Length / tabSize) * tabSize + (if s.Length % tabSize > 0 then tabSize else 0)
             | [] -> 0
-
-(*
-/// Make execution tooltip info for the given instruction and line v, dp before instruction dp.
-/// Does nothing if opcode is not documented with execution tooltip
-let toolTipInfo (v : int, orientation : string)
-                (dp : DataPath)
-                ({ Cond = cond; InsExec = instruction; InsOpCode = opc } : ParseTop.CondInstr) =
-    match Helpers.condExecute cond dp, instruction with
-    | false, _ -> ()
-    | true, ParseTop.IMEM ins ->
-        match Memory.executeMem ins dp with
-        | Error _ -> ()
-        | Ok res ->
-            let TROWS s =
-                (List.map (fun s -> s |> toDOM |> TD) >> TROW) s
-            let memStackInfo (ins : Memory.InstrMemMult) (dir : MemDirection) (dp : DataPath) =
-                let sp = dp.Regs.[ins.Rn]
-                let offLst, increment = Memory.offsetList (sp |> int32) ins.suff ins.rList ins.WB (dir = MemRead)
-                let locs = List.zip ins.rList offLst
-                let makeRegRow (rn : RName, ol : uint32) =
-                    [
-                        rn.ToString()
-                        (match dir with | MemRead -> "\u2190" | MemWrite -> "\u2192")
-                        (sprintf "Mem<sub>32</sub>[0x%08X]" ol)
-                        (match dir with
-                            | MemRead -> Map.tryFind (WA ol) dp.MM |> (function | Some(Dat x) -> x | _ -> 0u)
-                            | MemWrite -> dp.Regs.[rn])
-                        |> (fun x -> if abs (int x) < 10000 then sprintf "(%d)" x else sprintf "(0x%08X)" x)
-                    ]
-                let regRows =
-                    locs
-                    |> List.map (makeRegRow >> TROWS)
-                (findCodeEnd v, "Stack"), TABLE [] [
-                    DIV [] [
-                        TROWS [ sprintf "Pointer (%s)" (ins.Rn.ToString()); sprintf "0x%08X" sp ]
-                        TROWS [ "Increment"; increment |> sprintf "%d" ]
-                    ]
-                    DIV [ "tooltip-stack-regs-" + tippyTheme() + "-theme" ] regRows ]
-
-
-            let memPointerInfo (ins : Memory.InstrMemSingle) (dir : MemDirection) (dp : DataPath) =
-                let baseAddrU =
-                    let rb = dp.Regs.[ins.Rb]
-                    match ins.Rb with | R15 -> rb + 8u | _ -> rb
-                let baseAddr = int32 baseAddrU
-                let offset = (ins.MAddr dp baseAddr |> uint32) - baseAddrU |> int32
-                let ea = match ins.MemMode with | Memory.PreIndex | Memory.NoIndex -> (baseAddrU + uint32 offset) | _ -> baseAddrU
-                let mData = (match ins.MemSize with | MWord -> Memory.getDataMemWord | MByte -> Memory.getDataMemByte) ea dp
-                let isIncr = match ins.MemMode with | Memory.NoIndex -> false | _ -> true
-                (findCodeEnd v, "Pointer"), TABLE [] [
-                    TROWS [ sprintf "Base (%s)" (ins.Rb.ToString()); sprintf "0x%08X" baseAddrU ]
-                    TROWS [ "Address"; ea |> sprintf "0x%08X" ]
-                    TROWS <| if isIncr then [] else [ "Offset"; (offset |> sprintf "%+d") ]
-                    TROWS [ "Increment"; (if isIncr then offset else 0) |> (fun n -> sprintf "%+d" n) ]
-                    TROWS [ "Data"; match ins.LSType with
-                                    | LOAD -> match mData with | Ok dat -> dat | _ -> 0u
-                                    | STORE -> dp.Regs.[ins.Rd]
-                                    |> fun d ->
-                                        match ins.MemSize with
-                                        | MWord -> sprintf "0x%08X" d
-                                        | MByte -> sprintf "0x%02X" ((uint32 d) % 256u) ]
-                    ]
-
-            let makeTip memInfo =
-                let (hOffset, label), tipDom = memInfo dp
-                makeEditorInfoButton Tooltips.lineTipsClickable (hOffset, (v + 1), orientation) label tipDom
-            match ins with
-            | Memory.LDR ins -> makeTip <| memPointerInfo ins MemRead
-            | Memory.STR ins -> makeTip <| memPointerInfo ins MemWrite
-            | Memory.LDM ins -> makeTip <| memStackInfo ins MemRead
-            | Memory.STM ins -> makeTip <| memStackInfo ins MemWrite
-            | _ -> ()
-    | true, ParseTop.IDP(exec, op2) ->
-        let alu = ExecutionTop.isArithmeticOpCode opc
-        let pos = findCodeEnd v, v, orientation
-        match exec dp with
-        | Error _ -> ()
-        | Ok(dp', uF') ->
-            match op2 with
-            | DP.Op2.NumberLiteral _
-            | DP.Op2.RegisterWithShift(_, _, 0u) -> ()
-            | DP.Op2.RegisterWithShift(rn, shiftT, shiftAmt) ->
-                    makeShiftTooltip pos (dp, dp', uF') rn (Some shiftT, alu) shiftAmt op2
-                    
-            | DP.Op2.RegisterWithRegisterShift(rn, shiftT, sRn) ->
-                    makeShiftTooltip pos (dp, dp', uF') rn (Some shiftT, alu) (dp.Regs.[sRn] % 32u) op2
-                    
-            | DP.Op2.RegisterWithRRX rn -> makeShiftTooltip pos (dp, dp', uF') rn (None, alu) 1u op2
-    | _ -> ()
-
 *)
