@@ -30,18 +30,21 @@ let (|RegexExtractFormat|_|) pat txt =                                  //detect
 
 let rec tableTokeniser tableStr =                                           //input: entire table string, each row separated by /n. output: a list of tabletokens(rep. the entire table) containing Cellcontents, RowEnd, DelimRow
     match tableStr with
-    | Regex "\|[\s]*$" remainingRawInput -> []                              //end of table 
+    | Regex "\|[\s]*$" remainingRawInput -> Some []                              //end of table 
     | _  ->
-        let (matchedToken, remainingRawInput) = 
+        let tokenAndRemain = 
             match tableStr with
-            | Regex "\| *\r\n *" remainingRawInput -> (NewRow,remainingRawInput)                                                          // To end the row "|abc", where a,c = 0 or more whitespace, b = newline 
-            | Regex "\| +\-{3,} *" remainingRawInput -> (DelimCell,remainingRawInput)                                                   // To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
-            | RegexSplitCellFromTable "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> (Cell singleCell,remainingRawInput)    // To match |nx where n=at least 1 space, x= any character or "\|"  . 
-            | _ -> failwithf "Does not contain table format."
-
-        match (tableTokeniser remainingRawInput) with
-        | [] -> [matchedToken]
-        | tokenList -> matchedToken :: tokenList
+            | Regex "\| *\r\n *" remainingRawInput -> Some (NewRow,remainingRawInput)                                                          // To end the row "|abc", where a,c = 0 or more whitespace, b = newline 
+            | Regex "\| +\-{3,} *" remainingRawInput -> Some (DelimCell,remainingRawInput)                                                   // To match delimiter rows |nx where n=at least 1 space, x = at least 3 "-"
+            | RegexSplitCellFromTable "^\| +((\\\\\|)|[^\|])*" (singleCell,remainingRawInput) -> Some (Cell singleCell,remainingRawInput)    // To match |nx where n=at least 1 space, x= any character or "\|"  . 
+            | _ -> None //failwithf "Does not contain table format."
+        match tokenAndRemain with 
+        | None -> None
+        | Some  (matchedToken, remainingRawInput) -> 
+            match (tableTokeniser remainingRawInput) with
+            | Some [] -> Some [matchedToken]
+            | Some tokenList -> matchedToken :: tokenList |> Some
+            | None -> None
 
 let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElement List List List * (string*string)) = 
 
@@ -136,7 +139,11 @@ let tableParser (lst : TableTokens List) : (InlineElement List List * InlineElem
 
   //Top level function
 let tableHandler str =
-    let tokenisedTableList = tableTokeniser str
-    let (headerList, bodyListList, formatString) =
-        tableParser tokenisedTableList
-    Table {headerRow = headerList ; bodyRows = bodyListList ; tableFormat = formatString}
+    let maybeTokenisedTableList = tableTokeniser str
+    match maybeTokenisedTableList with
+    | Some tokenisedTableList ->
+        let (headerList, bodyListList, formatString) =
+            tableParser tokenisedTableList
+        Table {headerRow = headerList ; bodyRows = bodyListList ; tableFormat = formatString}
+    | None -> 
+        Paragraph [Text "Wrong Table Format"]
