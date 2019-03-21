@@ -11,6 +11,7 @@ The rest of the README gives a project and code overview.
 * [Features Implemented](#features-implemented)
 * [Testing](#testing)
 * [Future Extensions](#future-works)
+* [Group Summary
 
 ## Introduction
 
@@ -58,7 +59,9 @@ More in depth explanation about what each block does:
 
 ### Frontend
 The frontend of FSMD is a stripped down version of VISUAL2.
-The CSS\
+Styling of markdown output follows GitHub markdown representation using the css styling by  
+(https://github.com/sindresorhus/github-markdown-css/blob/gh-pages/github-markdown.css)
+
 
 ## How to build
 The build instructions are more or less the same as [Visual2](https://github.com/ImperialCollegeLondon/Visual2)
@@ -93,14 +96,18 @@ Below is the list of standard features available, with some comments if they are
 * Paragraph
 * Links, Images
 * Link Reference, Image Reference
-* Inline Styling (Bold, Itallic, Emphasis, Strong, Breaks)
+* Inline Styling (**Bold**, *Itallic*, `inlinecode`, etc)
 
 ### Additional Implemented Features
 Here are several additional features not part of markdown specification but is deemed useful:
-* Tables   ---> Able to parse and style the table as well
-* Katex    ---> Part of inline styling, [KATEX](https://katex.org/) is latex-like typesetting library 
-                that allows equations to be represented with mathematical style. It is a js library that
-                must be added by either using `npm` or `yarn`
+* Tables               ---> Able to parse and style the table as well
+* Katex                ---> Part of inline styling, [KATEX](https://katex.org/) is latex-like typesetting library 
+                            that allows equations to be represented with mathematical style. It is a js library that
+                            must be added by either using `npm` or `yarn`
+* Auto Parse           ---> Current markdown file under editing is automatically parsed every 5 seconds
+* Fragment Identifier  ---> Able to jump to the part of the document referred to.
+* Resizeable panes
+* Tables with adjustable height and weight
 
 ## Testing
 Say something more about testing other than unit tests
@@ -149,4 +156,4 @@ This subdirectory is copied by webpack from ./node_modules/monaco-editor/min/vs.
 It works around the fact that _packaging tools_ do not understand the non-standard Monaco loader, which loads Monaco editor files. Therefore to make things work the Monaco loader dependencies are all copied to the app directly in this directory. Note that extra code in the `webpack.config` script to allow this.
 
 ## Future Works
-`HTML` tags are yet to be processed
+`HTML` tags are yet to be done
