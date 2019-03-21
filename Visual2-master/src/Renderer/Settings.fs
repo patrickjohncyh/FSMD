@@ -72,12 +72,6 @@ let initFormSettings() =
     setS editorWordWrap vs.EditorWordWrap
     setS editorRenderWhitespace vs.EditorRenderWhitespace
 
-
-
-
-
-
-
 let makeInputVal inType name (min : int, steps : int, max : int) defi =
     let fi = document.createElement_input()
     fi.``type`` <- inType

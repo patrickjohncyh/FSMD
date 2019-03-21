@@ -8,8 +8,6 @@
 /// implement views panel
 module Views
 
-open Fable.Core
-open Fable.Core.JsInterop
 open Fable.Import.Browser
 open Refs
 open Fable
@@ -17,7 +15,6 @@ open ExecutionTop
 
 let maxSymbolWidth = 30
 let maxDataSymbolLength = 16
-
 
 let nameSquash maxW name =
     let nameLen = String.length name
@@ -42,7 +39,6 @@ let setRepresentation rep =
     (// Disable the other button
     representation currentRep).classList.remove("btn-rep-enabled")
     |> ignore
-
     // Enable the newly pressed button
     let btnNew = representation rep
     btnNew.classList.add ("btn-rep-enabled");

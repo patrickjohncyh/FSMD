@@ -18,75 +18,6 @@ open CommonData
 open Refs
 open Editors
 
-(*
-/// Get flag as stored and displayed in GUI
-let getFlag (id : string) =
-    let el = Refs.flag id
-    match el.innerHTML with
-    | "1" -> true
-    | _ -> false
-
-/// Set flag as stored and displayed in GUI
-let setFlag (id : string) (value : bool) (hasChanged : bool) =
-    let el = Refs.flag id
-    match value with
-        | false ->
-            el.innerHTML <- sprintf "%i" 0
-        | true ->
-            el.innerHTML <- sprintf "%i" 1
-    match hasChanged with
-        | false ->
-            el.setAttribute ("style", "background: #fcfcfc")
-        | true ->
-            el.setAttribute ("style", "background: #4285f4")
-
-
-/// initialise stored and displayed flags to 0
-let resetFlags() =
-    setFlag "N" false false
-    setFlag "C" false false
-    setFlag "Z" false false
-    setFlag "V" false false
-
-let setStatusButton msg (className : string) =
-    let classes = [| "btn-positive"; "btn-negative"; "btn-primary" |]
-    Refs.statusBar.classList.remove classes
-    Refs.statusBar.classList.add (className)
-    Refs.statusBar.innerHTML <- msg
-
-let setErrorStatus msg = setStatusButton msg "btn-negative"
-
-let setExecutionCompleteStatus() =
-    setStatusButton "Execution Complete" "btn-positive"
-
-let setStepExecutionStatus() = setStatusButton "Stepping" "btn-primary"
-
-let setNoStatus() =
-    Refs.statusBar.classList.remove ("btn-negative")
-    Refs.statusBar.classList.remove ("btn-positive")
-    Refs.statusBar.classList.remove ("btn-primary")
-    Refs.statusBar.innerHTML <- "-"
-
-let setRunButton (mode : ExecutionTop.RunMode) =
-    match mode with
-    | ExecutionTop.ActiveMode(ExecutionTop.Running, _) ->
-        Refs.runSimulationBtn.innerText <- "Pause";
-    | _ ->
-        Refs.runSimulationBtn.innerText <- "Run"
-
-let setMode (rm : ExecutionTop.RunMode) =
-    match rm with
-    | ExecutionTop.ParseErrorMode -> setErrorStatus "Errors in Code"
-    | ExecutionTop.RunErrorMode _ -> setErrorStatus "Runtime Error"
-    | ExecutionTop.ResetMode ->
-        setNoStatus()
-        Tooltips.deleteAllContentWidgets()
-    | ExecutionTop.ActiveMode(_, _) -> setStepExecutionStatus()
-    | ExecutionTop.FinishedMode _ -> setExecutionCompleteStatus()
-    setRunButton rm
-    Refs.runMode <- rm
-*)
-
 let getSettingsTabId() =
     match Refs.settingsTab with
     | Some x -> x
@@ -249,7 +180,7 @@ let createNamedFileTab fName fPath =
         id
 
 let createFileTab() =
-    createNamedFileTab "Untitled.s" ""
+    createNamedFileTab "Untitled.md" ""
     |> (fun tId -> selectFileTab tId; tId) // Switch to the tab we just created
 
 let deleteCurrentTab() =

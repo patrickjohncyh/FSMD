@@ -65,19 +65,6 @@ let updateAllEditors readOnly =
     setTheme (theme) |> ignore
     setCustomCSS "--editor-font-size" (sprintf "%spx" vSettings.EditorFontSize)
 
-(*
-// Disable the editor and tab selection during execution
-let disableEditors() =
-    Refs.fileTabMenu.classList.add ("disabled-click")
-    Refs.fileTabMenu.onclick <- (fun _ ->
-        showVexAlert ("Cannot change tabs during execution")
-        createObj []
-    )
-    updateEditor Refs.currentFileTabId true
-    Refs.darkenOverlay.classList.remove ("invisible")
-    Refs.darkenOverlay.classList.add ([| "disabled-click" |])
-    *)
-
 // Enable the editor once execution has completed
 let enableEditors() =
     Refs.fileTabMenu.classList.remove ("disabled-click")
@@ -143,47 +130,7 @@ let highlightGlyph tId number glyphClassName =
 let highlightNextInstruction tId number =
     if number > 0 then highlightGlyph tId number "editor-glyph-margin-arrow"
 
-/// <summary>
-/// Decorate a line with an error indication and set up a hover message.
-/// Distinct message lines must be elements of markdownLst.
-/// markdownLst: string list - list of markdown paragraphs.
-/// tId: int - tab identifier.
-/// lineNumber: int - line to decorate, starting at 1.
-/// hoverLst: hover attached to line.
-/// gHoverLst: hover attached to margin glyph.</summary>
-(*
-let makeErrorInEditor tId lineNumber (hoverLst : string list) (gHoverLst : string list) =
-    let makeMarkDown textLst =
-        textLst
-        |> List.toArray
-        |> Array.map (fun txt -> createObj [ "isTrusted" ==> true; "value" ==> txt ])
-    // decorate the line
-    editorLineDecorate
-        Refs.editors.[tId]
-        lineNumber
-        (createObj [
-            "isWholeLine" ==> true
-            "isTrusted" ==> true
-            "inlineClassName" ==> "editor-line-error"
-            "hoverMessage" ==> makeMarkDown hoverLst
-         ])
-        None
-    // decorate the margin
-    editorLineDecorate
-        Refs.editors.[tId]
-        lineNumber
-        (createObj [
-            "isWholeLine" ==> true
-            "isTrusted" ==> true
-            "glyphMarginClassName" ==> "editor-glyph-margin-error"
-            "glyphMarginHoverMessage" ==> makeMarkDown gHoverLst
-            "overviewRuler" ==> createObj [ "position" ==> 4 ]
-        ])
-        None
 
-let revealLineInWindow tId (lineNumber : int) =
-    Refs.editors.[tId]?revealLineInCenterIfOutsideViewport (lineNumber) |> ignore
-*)
 //*************************************************************************************
 //                              EDITOR CONTENT WIDGETS
 //*************************************************************************************

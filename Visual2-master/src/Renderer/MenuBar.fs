@@ -39,7 +39,6 @@ let interlock (actionName : string) (action : Unit -> Unit) = (
             printf "button %A" buttonNum
             match buttonNum with
             | false -> ()
-            | _ -> Integration.resetEmulator(); action()
         match Refs.runMode with
         | ExecutionTop.ResetMode
         | ExecutionTop.ParseErrorMode -> action() :> obj
@@ -98,8 +97,8 @@ let makePrefsWindow() =
 
  /// Load the node Buffer into the specified tab
 let loadFileIntoTab tId (fileData : Node.Buffer.Buffer) =
-    if currentFileTabId = tId then
-        Integration.resetEmulator()
+//    if currentFileTabId = tId then
+//        Integration.resetEmulator()
     let editor = editors.[tId]
     editor?setValue (fileData.toString ("utf8")) |> ignore
     setTabSaved tId
@@ -137,22 +136,6 @@ let openFile() =
     |> openListOfFiles
     |> ignore
 
-
-
-
-(*
-let loadDemo() =
-    Tabs.createFileTab()
-    |> fun tId ->
-        let sampleFileName = Tests.sampleDir + "karatsuba.s"
-        printfn "Reading sample file: %s" sampleFileName
-        Node.Exports.fs.readFile (sampleFileName, (fun _ data -> // TODO: find out what this error does
-                                              loadFileIntoTab tId data
-        ))
-        Tabs.setTabSaved tId
-*)
-
-
 let showQuitMessage (callBack : bool -> unit) =
     let mess = "You have unsaved changes. Are you sure you want to exit and lose changes?"
     let buttons = [ "Save"; "Exit without saving" ]
@@ -177,8 +160,6 @@ let ExitIfOK() =
  *                                  MENU HELPER FUNCTIONS
  *
  ****************************************************************************************************)
-
-
 let menuSeparator =
     let sep = createEmpty<MenuItemOptions>
     sep.``type`` <- Some Separator
@@ -241,8 +222,6 @@ let fileMenu() =
             makeItem "Quit" (Some "CmdOrCtrl+Q") ExitIfOK
         ]
 
-
-
 let editMenu() =
     makeMenu "Edit" [
         makeItem "Undo" (Some "CmdOrCtrl+Z") Files.editorUndo
@@ -274,11 +253,6 @@ let viewMenu() =
             makeCondItem (debugLevel > 0) "Toggle Dev Tools" (Some devToolsKey) (electron.remote.getCurrentWebContents()).toggleDevTools
         ]
 
-
-
-
-
-
 let popupMenu (items) =
     let menu = electron.remote.Menu.Create()
     items
@@ -287,55 +261,18 @@ let popupMenu (items) =
     menu.popup (electron.remote.getCurrentWindow())
     ()
 
-(*
-let testMenu() =
-        let runToBranch() = ()
-        let menu = electron.remote.Menu.Create()
-        let runSteps() =
-            showVexValidatedPrompt "steps forward" validPosInt (int64 >> (Integration.runEditorTab ExecutionTop.NoBreak)) "Number of steps forward"
-        let runStepsBack() =
-            showVexValidatedPrompt "steps back" validPosInt (int64 >> (Integration.stepCodeBackBy)) "Number of steps back"
-        let runSingleTest() =
-            match Testbench.getTestList() with
-            | [] -> showVexAlert "Can't find any tests. Have you loaded a valid testbench?"
-            | lst -> popupMenu (List.map (fun (test : ExecutionTop.Test) ->
-                        let name = sprintf "Step code with initial data from Test %d" test.TNum
-                        let actFun = fun () -> Integration.startTest test
-                        makeItem name Core.None actFun) lst)
-        let runTo cond () = Integration.runEditorTab cond System.Int64.MaxValue
-        makeMenu "Test" [
-            makeItem "Step <-" (Some "F3") Integration.stepCodeBack
-            makeItem "Step ->" (Some "F4") Integration.stepCode
-            makeItem "Step to next call" (Some "F5") (runTo ExecutionTop.ToSubroutine)
-            makeItem "Step to next return" (Some "F6") (runTo ExecutionTop.ToReturn)
-            makeItem "Step forward by" Core.Option.None runSteps
-            makeItem "Step back by" Core.Option.None runStepsBack
-            menuSeparator
-            makeItem "Step into test" Core.Option.None (interlockAction "Test" runSingleTest)
-            makeItem "Run all tests" Core.Option.None (interlockAction "Testbench" Integration.runTestbenchOnCode)
-        ]
-*)
-
 let helpMenu() =
         makeMenu "Help" (
             [
-                (*
-                makeItem "UAL instruction guide" Core.Option.None (runExtPage <| visualDocsPage "guide#content")
-                makeItem "VisUAL2 web pages" Core.Option.None (runExtPage <| visualDocsPage "")
-                makeItem "Testbenches" Core.Option.None (runExtPage <| visualDocsPage "testbench")
-                makeItem "Official ARM documentation" Core.Option.None (runExtPage "http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0234b/i1010871.html")
-                menuSeparator
-                //makeItem "Load complex demo code" Core.Option.None (interlockAction "load code" loadDemo)
-                makeCondItem (debugLevel > 0) "Run dev tools FABLE checks" Core.Option.None (interlockAction "FABLE checks" Integration.runTestbench)
-                makeCondItem (debugLevel > 0) "Run Emulator Tests" Core.Option.None (interlockAction "run tests" Tests.runAllEmulatorTests)
+                makeItem "FSMD Github Repo" Core.Option.None (runExtPage "https://github.com/patrickjohncyh/FSMD/tree/combined")
+                makeItem "Complete Markdown Documentation" Core.Option.None (runExtPage "https://spec.commonmark.org/")
                 menuSeparator
                 makeItem "About" Core.option.None (fun () ->
                     printfn "Directory is:%s" (Stats.dirOfSettings())
-                    showVexAlert (sprintf "<h4>VisUAL2 ARM Simulator v%s</h4> " Refs.appVersion +
-                                "(c) 2018, Imperial College <br> Acknowledgements: Salman Arif (VisUAL), HLP 2018 class" +
-                                " (F# reimplementation), with special mention to Thomas Carrotti," +
-                                " Lorenzo Silvestri, and HLP Team 10"))
-                                *)
+                    showVexAlert (sprintf "<h4>FSMD Markdown Parser v%s</h4> " Refs.appVersion +
+                                 "(c) 2019, Imperial College <br> Acknowledgements: Salman Arif (VisUAL), HLP 2019 class" +
+                                 " (F# implementation), with special mention toTom Clarke," +
+                                 " Patrick John Isiah Chia, and HLP Team 5"))
             ])
 
 
@@ -347,7 +284,6 @@ let mainMenu() =
             editMenu()
             viewMenu()
             helpMenu()
-           // testMenu()
         ]
     template
     |> electron.remote.Menu.buildFromTemplate
