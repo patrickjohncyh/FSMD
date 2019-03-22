@@ -119,7 +119,6 @@ X and Y are the width and height of the tables respectively
 * Auto Parse           ---> Current markdown file under editing is automatically parsed every 5 seconds
 * Fragment Identifier  ---> Able to jump to the part of the document referred to.
 * Resizeable panes
-* Tables with adjustable height and weight
 
 ## File Structure
 
