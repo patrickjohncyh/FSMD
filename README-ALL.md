@@ -103,16 +103,16 @@ intended to be styled, for example for bold, \*\*(bolded characters)\*\* and ita
 ### Additional Implemented Features
 Here are several additional features not part of markdown specification but is deemed useful:
 * Tables               ---> Able to parse and style the table as well
-Here is the way to make table, the height and width of the table can be adjusted from the first cell
-\| $$$x,y | Table Head 1 | Table Head 2 |
-\| ---- | Delimiter cell, divides table head and table body
-\| Table body |
+Here is the way to make table, the height and width of the table can be adjusted from the first cell  
+X and Y are the width and height of the tables respectively  
+\| $$$x,y | Table Head 1 | Table Head 2 |  
+\| ---- | Delimiter cell, divides table head and table body    
+\| Table body |  
 
 | Table Head 1 | Table Head 2 |
-| ---- |
-| Table body |
+| ---- | ---- |
+| Table body | Table body |
 
-X and Y are the width and height of the tables respectively
 * Katex                ---> Part of inline styling, [KATEX](https://katex.org/) is latex-like typesetting library 
                             that allows equations to be represented with mathematical style. It is a js library that
                             must be added by either using `npm` or `yarn`
