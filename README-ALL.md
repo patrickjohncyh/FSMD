@@ -88,17 +88,31 @@ For Mac users, download and install [Mono](http://www.mono-project.com/download/
 ### Markdown Standard Features
 Below is the list of standard features available, with some comments if they are slightly different from commonmark
 * Lists
-* Code Block ---> Only supports fenced code block \```
-* Headings
-* BlockQuote
+* Code Block ---> Only supports fenced code block \`
+```
+let x = a + b
+```
+* ##### Headings
+* > BlockQuote
 * Paragraph
 * Links, Images
 * Link Reference, Image Reference
-* Inline Styling (**Bold**, *Itallic*, `inlinecode`, etc)
+* Inline Styling (**Bold**, *Itallic*, `inlinecode`, etc) for inline styling one must put parens () on the characters  
+intended to be styled, for example for bold, \*\*(bolded characters)\*\* and itallic, it is \*(italicised characters)\*.
 
 ### Additional Implemented Features
 Here are several additional features not part of markdown specification but is deemed useful:
 * Tables               ---> Able to parse and style the table as well
+Here is the way to make table, the height and width of the table can be adjusted from the first cell
+\| $$$x,y | Table Head 1 | Table Head 2 |
+\| ---- | Delimiter cell, divides table head and table body
+\| Table body |
+
+| Table Head 1 | Table Head 2 |
+| ---- |
+| Table body |
+
+X and Y are the width and height of the tables respectively
 * Katex                ---> Part of inline styling, [KATEX](https://katex.org/) is latex-like typesetting library 
                             that allows equations to be represented with mathematical style. It is a js library that
                             must be added by either using `npm` or `yarn`
@@ -142,7 +156,7 @@ The `js` scripts loaded by the `index.html`, **after** the DOM elements (statica
 
 ##### `app/js/monaco-init.js`
 
-`Monaco Editor` setup script.
+`Monaco Editor` setup script, changes are done to support markdown grammar identification.
 
 ##### `app/js/vs`
 
@@ -151,4 +165,4 @@ This subdirectory is copied by webpack from ./node_modules/monaco-editor/min/vs.
 It works around the fact that _packaging tools_ do not understand the non-standard Monaco loader, which loads Monaco editor files. Therefore to make things work the Monaco loader dependencies are all copied to the app directly in this directory. Note that extra code in the `webpack.config` script to allow this.
 
 ## Future Works
-`HTML` tags are yet to be done
+`HTML` tags are yet to be done, functionality to go to a specific part of the document if we are clicking on the generated markdown and text file vice versa.
